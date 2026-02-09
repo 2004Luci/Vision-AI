@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+// Cross-platform pre-commit hook (Node) - branch name validation
+const { execSync } = require("child_process");
+
+const validBranchRegex = /^(feature|bugfix|update|release)\/[a-z0-9._-]+$/;
+const standardBranches = ["develop", "HEAD"];
+
+try {
+  const localBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+
+  console.log("RUNNING PRE-COMMIT SCRIPT (Node)");
+
+  if (standardBranches.includes(localBranch) || validBranchRegex.test(localBranch)) {
+    process.exit(0);
+  } else {
+    console.error(
+      "There is something wrong with your branch name. Branch names in this project must adhere to this contract: ^(feature|bugfix|update|release)/[a-z0-9._-]+$"
+    );
+    console.error(
+      "Your commit will be rejected. You should rename your branch to a valid name and try again."
+    );
+    console.error(`Current branch: ${localBranch}`);
+    process.exit(1);
+  }
+} catch (error) {
+  console.error("Error running pre-commit hook:", error.message);
+  process.exit(1);
+}
