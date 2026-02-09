@@ -54,6 +54,13 @@ npm install
 npm start
 ```
 
+**Tunnel mode** (if your phone can’t reach the dev server on the same Wi‑Fi, e.g. “Failed to download remote update” in Expo Go):
+
+```bash
+cd frontend
+npx expo start --tunnel
+```
+
 Then open in Expo Go (scan QR code) or press `a` (Android) / `i` (iOS) / `w` (web).
 
 ### Backend & models
