@@ -8,7 +8,7 @@ A prototype application that helps blind and visually impaired individuals by pr
 - Offline ML model processing (planned)
 - Text-to-speech audio feedback (planned)
 - **React Native (Expo)** mobile app with **TypeScript** and **Tailwind (NativeWind)**
-- **Django** backend API (planned)
+- **FastAPI** backend API (Python)
 - **ML models** in a dedicated `models/` folder (planned)
 
 ## Project Structure
@@ -16,7 +16,7 @@ A prototype application that helps blind and visually impaired individuals by pr
 ```
 VisionAI/
 ├── frontend/         # Expo React Native app (TypeScript, NativeWind)
-├── backend/         # Django backend (to be added)
+├── backend/         # FastAPI backend (Python)
 ├── models/          # ML models (to be added)
 ├── .githooks/       # Git hooks (branch name validation)
 ├── .github/         # CI workflows
@@ -30,7 +30,7 @@ VisionAI/
 ### Prerequisites
 
 - **Node.js** (v18+)
-- **Python 3.8+** (for backend, when added)
+- **Python 3.10+** (for backend)
 - **Expo Go** app (for testing on device)
 - **Android Studio** / **Xcode** (for emulators; optional)
 
@@ -65,14 +65,14 @@ Then open in Expo Go (scan QR code) or press `a` (Android) / `i` (iOS) / `w` (we
 
 ### Backend & models
 
-Backend and models folders are placeholders. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for future backend and ML setup.
+Backend is implemented with FastAPI. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for backend and ML setup.
 
 ## Detailed setup
 
 See **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** for:
 
 - Git hooks (branch name validation)
-- Backend (Django) setup when added
+- Backend (FastAPI) setup
 - Frontend (Expo) configuration
 - Environment variables and troubleshooting
 
