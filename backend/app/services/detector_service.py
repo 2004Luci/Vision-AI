@@ -43,5 +43,7 @@ class DetectorService:
 
 if __name__ == "__main__":
     detector = DetectorService()
-    results = detector.detect("D:\BITS\SEM 8\SOP(JK Sahoo)\Vision-AI\models\data\raw\custom\images\pexels-kindelmedia-7148445.jpg")
+    results = detector.detect(
+        r"D:\BITS\SEM 8\SOP(JK Sahoo)\Vision-AI\models\data\raw\custom\images\pexels-kindelmedia-7148445.jpg"
+    )
     print(results)
