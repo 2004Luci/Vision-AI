@@ -8,7 +8,7 @@ A prototype application that helps blind and visually impaired individuals by pr
 - Offline ML model processing (planned)
 - Text-to-speech audio feedback (planned)
 - **React Native (Expo)** mobile app with **TypeScript** and **Tailwind (NativeWind)**
-- **Django** backend API (planned)
+- **FastAPI** backend API (Python)
 - **ML models** in a dedicated `models/` folder (planned)
 
 ## Project Structure
@@ -16,7 +16,7 @@ A prototype application that helps blind and visually impaired individuals by pr
 ```
 VisionAI/
 ├── frontend/         # Expo React Native app (TypeScript, NativeWind)
-├── backend/         # Django backend (to be added)
+├── backend/         # FastAPI backend (Python)
 ├── models/          # ML models (to be added)
 ├── .githooks/       # Git hooks (branch name validation)
 ├── .github/         # CI workflows
@@ -30,7 +30,7 @@ VisionAI/
 ### Prerequisites
 
 - **Node.js** (v18+)
-- **Python 3.8+** (for backend, when added)
+- **Python 3.10+** (for backend)
 - **Expo Go** app (for testing on device)
 - **Android Studio** / **Xcode** (for emulators; optional)
 
@@ -63,16 +63,32 @@ npx expo start --tunnel
 
 Then open in Expo Go (scan QR code) or press `a` (Android) / `i` (iOS) / `w` (web).
 
+### Android dev build (physical device / emulator)
+
+To build and install the **dev debug** app on a connected Android device or emulator:
+
+```bash
+cd frontend
+npm run android:install-dev
+```
+
+Or from the Android project directory: `cd frontend/android` then `./gradlew installDevDebug` (macOS/Linux) or `gradlew.bat installDevDebug` (Windows). That builds and installs the dev variant (app id: `com.anonymous.VisionAI.dev`). If the build fails with “SDK location not found”, add `frontend/android/local.properties` with:
+
+`sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk`  
+(use your own SDK path; `local.properties` is gitignored.)
+
+**NDK:** The project is pinned to **NDK 26.1.10909125**. Install it via **Android Studio → SDK Manager → SDK Tools** → "Show Package Details" → **NDK** → **26.1.10909125** → Apply. If only NDK 27 is installed, the native build can fail with undefined C++ symbol errors. A patched React Native header (`graphicsConversions.h`) is applied automatically (via `patch-package` and the app’s Gradle/CMake setup) for NDK 26 compatibility.
+
 ### Backend & models
 
-Backend and models folders are placeholders. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for future backend and ML setup.
+Backend is implemented with FastAPI. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for backend and ML setup.
 
 ## Detailed setup
 
 See **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** for:
 
 - Git hooks (branch name validation)
-- Backend (Django) setup when added
+- Backend (FastAPI) setup
 - Frontend (Expo) configuration
 - Environment variables and troubleshooting
 

@@ -32,11 +32,28 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+venv/
+.venv/
+backend/venv/
+models/venv/
 
 # typescript
 *.tsbuildinfo
 
 # generated native folders
 **/ios
-**/android
+# **/android
 **/node_modules
+
+
+
+batman-development/
