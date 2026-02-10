@@ -108,6 +108,14 @@ npx expo start
 - **Android emulator**: Press `a` in the terminal (requires Android Studio).
 - **iOS simulator** (macOS only): Press `i` in the terminal (requires Xcode).
 
+### Android native build (dev client / New Architecture)
+
+The app uses React Native’s **New Architecture** and builds native code with **NDK 26**.
+
+- **NDK version:** The project pins **NDK 26.1.10909125**. Install it in **Android Studio → SDK Manager → SDK Tools** → enable "Show Package Details" → under **NDK** select **26.1.10909125** → Apply.
+- **Patched header:** A patch is applied to React Native’s `graphicsConversions.h` (for NDK 26’s C++ stdlib). It is applied automatically when you run `npm install` in `frontend/` (via `patch-package`). The app’s Gradle/CMake setup copies this patched header and passes it to the native build so both the app and autolinked libraries use it.
+- **First native build:** From `frontend/` run `npm run android:install-dev` (or from `frontend/android`: `./gradlew installDevDebug` on macOS/Linux, `gradlew.bat installDevDebug` on Windows). The first build can take several minutes.
+
 ### Frontend tech stack
 
 - **Expo** SDK 54
@@ -178,6 +186,9 @@ The `models/` folder is a placeholder for ML model files (e.g. TensorFlow, ONNX)
 - **Expo Go not connecting**  
   Ensure phone and computer are on the same Wi‑Fi and that no firewall is blocking the dev server port.
 
+- **Android native build: undefined C++ symbols or std::format / graphicsConversions errors**  
+  The project is pinned to **NDK 26.1.10909125**. Install it in **Android Studio → SDK Manager → SDK Tools** → "Show Package Details" → **NDK** → **26.1.10909125** → Apply. Ensure patches are applied: from `frontend/` run `npm install` (this runs `patch-package` and applies the React Native header patch). Then from `frontend/android` run `gradlew.bat clean` (Windows) or `./gradlew clean`, and build again (e.g. `gradlew.bat installDevDebug` or `./gradlew installDevDebug`).
+
 ### Backend
 
 - **Port 8000 in use**  
@@ -206,7 +217,8 @@ The `models/` folder is a placeholder for ML model files (e.g. TensorFlow, ONNX)
 |-------------------|------------------------------|
 | Install frontend  | `cd frontend && npm install`  |
 | Start app         | `npm start`                   |
-| Android           | `npm run android`             |
+| Android (Expo Go) | `npm run android`             |
+| Android dev build | `cd frontend && npm run android:install-dev` |
 | iOS               | `npm run ios`                 |
 | Web               | `npm run web`                 |
 | Git hooks         | `git config core.hooksPath .githooks` |
