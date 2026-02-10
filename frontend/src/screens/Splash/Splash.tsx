@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   useWindowDimensions,
@@ -6,20 +6,52 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import { Lottie } from '../../animations/components';
+import { AppInit } from '../../animations/assets';
 
-/**
- * Splash screen shown on app init.
- * Uses text + ActivityIndicator so it works in Expo Go and dev builds.
- * Replace with Lottie (assets/animations/splash-placeholder.json) when using a dev client.
- */
-export function Splash() {
+type Props = { children: ReactNode };
+
+class SplashErrorBoundary extends Component<Props, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError = () => ({ hasError: true });
+
+  componentDidCatch(error: Error, _info: ErrorInfo) {
+    if (__DEV__) console.warn('[Splash] Lottie failed:', error?.message);
+  }
+
+  render() {
+    if (this.state.hasError) return <FallbackSplash />;
+    return this.props.children;
+  }
+}
+
+function FallbackSplash() {
   const { width, height } = useWindowDimensions();
-
   return (
     <View style={[styles.container, { width, height }]}>
       <Text style={styles.title}>VisionAI</Text>
       <ActivityIndicator size="large" color="#2563eb" style={styles.spinner} />
     </View>
+  );
+}
+
+export function Splash() {
+  const { width, height } = useWindowDimensions();
+
+  return (
+    <SplashErrorBoundary>
+      <View style={[styles.container, { width, height }]}>
+        <Lottie
+          source={AppInit}
+          width={width}
+          height={height}
+          loop={false}
+          autoPlay
+          resizeMode="contain"
+        />
+      </View>
+    </SplashErrorBoundary>
   );
 }
 
@@ -30,10 +62,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '600',
     color: '#f8fafc',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   spinner: {
     marginTop: 8,
