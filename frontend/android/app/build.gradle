@@ -4,6 +4,15 @@ apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
+// Patched React Native header for NDK 26 (std::format not in libc++) - copied so app/autolinked native build use it
+def patchedReactHeadersDir = file("${buildDir}/patched_react_headers")
+def sourceGraphicsConversions = file(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim()).getParentFile().toPath().resolve("ReactCommon/react/renderer/core/graphicsConversions.h").toFile()
+tasks.register("copyPatchedReactHeaders", Copy) {
+  from sourceGraphicsConversions
+  into file("${patchedReactHeadersDir}/react/renderer/core")
+  onlyIf { sourceGraphicsConversions.exists() }
+}
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -82,7 +91,8 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
+    // Pin NDK 26 so app/codegen link uses same C++ stdlib (avoids undefined symbol errors)
+    ndkVersion "26.1.10909125"
 
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
@@ -103,6 +113,22 @@ android {
         versionName "1.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
+    }
+    // Add patched header dir in same phase as React plugin (finalizeDsl) so CMake receives it
+    project.pluginManager.withPlugin("com.android.application") {
+        project.extensions.getByType(com.android.build.api.variant.ApplicationAndroidComponentsExtension).finalizeDsl { ext ->
+            def patchedDir = file("${layout.buildDirectory.get().asFile}/patched_react_headers").absolutePath.replace('\\', '/')
+            if (ext?.externalNativeBuild?.cmake != null && ext.defaultConfig?.externalNativeBuild?.cmake?.arguments != null) {
+                def args = ext.defaultConfig.externalNativeBuild.cmake.arguments
+                if (!args.any { it?.startsWith("-DREACT_PATCHED_HEADERS_DIR=") }) {
+                    args.add("-DREACT_PATCHED_HEADERS_DIR=${patchedDir}")
+                    println "VisionAI: Added REACT_PATCHED_HEADERS_DIR=${patchedDir}"
+                }
+            }
+        }
+    }
+    afterEvaluate {
+        tasks.matching { it.name.startsWith("configureCMake") }.configureEach { it.dependsOn("copyPatchedReactHeaders") }
     }
     signingConfigs {
         debug {
