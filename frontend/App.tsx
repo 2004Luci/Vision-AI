@@ -9,6 +9,7 @@ export default function App() {
       <Text className="text-lg text-gray-800">
         Open up App.tsx to start working on your app!
       </Text>
+      <Text className="text-lg text-gray-800">Hello World</Text>
       <StatusBar style="auto" />
     </View>
   );
