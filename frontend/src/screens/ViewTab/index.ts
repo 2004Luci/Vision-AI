@@ -1,0 +1,1 @@
+export { ViewTabScreen } from './ViewTabScreen';
