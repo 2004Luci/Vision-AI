@@ -2,23 +2,23 @@ import React from 'react';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { Tabs } from './Tabs';
 
-const lightTheme = {
+const darkTheme = {
   ...DefaultTheme,
-  dark: false,
+  dark: true,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#2563eb',
-    background: '#ffffff',
-    card: '#ffffff',
-    text: '#1e293b',
-    border: '#e2e8f0',
-    notification: '#2563eb',
+    primary: '#FFD54F',
+    background: '#0f1117',
+    card: '#1a1d24',
+    text: '#ffffff',
+    border: '#2d3142',
+    notification: '#FFD54F',
   },
 };
 
 export function Navigation() {
   return (
-    <NavigationContainer theme={lightTheme}>
+    <NavigationContainer theme={darkTheme}>
       <Tabs />
     </NavigationContainer>
   );
