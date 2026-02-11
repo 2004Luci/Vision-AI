@@ -8,10 +8,10 @@ import { MainContainer } from './src/screens/Main';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <View style={{ flex: 1, backgroundColor: '#0f1117' }}>
         <MainContainer />
       </View>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
     </SafeAreaProvider>
   );
 }

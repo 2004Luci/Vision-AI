@@ -1,0 +1,1 @@
+export { VoiceScreen } from './VoiceScreen';
