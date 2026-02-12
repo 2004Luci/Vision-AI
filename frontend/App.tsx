@@ -3,15 +3,18 @@ import React from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MainContainer } from './src/screens/Main';
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#0f1117' }}>
+    <GestureHandlerRootView className='flex-1'>
+      <SafeAreaProvider>
+        <View className="flex-1 bg-screen">
         <MainContainer />
-      </View>
-      <StatusBar style="light" />
-    </SafeAreaProvider>
+        </View>
+        <StatusBar style="light" />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
