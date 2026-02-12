@@ -9,14 +9,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../../theme/colors';
 
-const ACCENT_YELLOW = '#FFD54F';
-const CARD_BG = '#1a1d24';
-const CARD_BG_LIGHT = '#2d3142';
-const SCREEN_BG = '#0f1117';
-const WHITE = '#ffffff';
-const GREY = '#9ca3af';
-const GREEN = '#22c55e';
+const {
+  accentYellow,
+  cardBg,
+  cardBgLight,
+  screenBg,
+  white,
+  grey,
+  green,
+} = colors;
 
 const FEATURE_CARDS = [
   {
@@ -94,7 +97,7 @@ export function HomeScreen() {
             </View>
           </View>
           <View style={styles.equalizerIcon}>
-            <Ionicons name="cellular" size={24} color={ACCENT_YELLOW} />
+            <Ionicons name="cellular" size={24} color={accentYellow} />
           </View>
         </View>
 
@@ -117,7 +120,7 @@ export function HomeScreen() {
               <Ionicons
                 name={card.icon as any}
                 size={24}
-                color={card.highlighted ? '#000000' : WHITE}
+                color={card.highlighted ? '#000000' : white}
               />
             </View>
             <View style={styles.featureTextWrap}>
@@ -154,7 +157,7 @@ export function HomeScreen() {
                 <Ionicons
                   name={item.icon as any}
                   size={28}
-                  color={ACCENT_YELLOW}
+                  color={accentYellow}
                 />
               </View>
               <Text style={styles.recentTitle}>{item.title}</Text>
@@ -169,7 +172,7 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: SCREEN_BG,
+    backgroundColor: screenBg,
   },
   scroll: {
     flex: 1,
@@ -187,16 +190,16 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 28,
     fontWeight: '700',
-    color: WHITE,
+    color: white,
   },
   userName: {
-    color: ACCENT_YELLOW,
+    color: accentYellow,
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: ACCENT_YELLOW,
+    backgroundColor: accentYellow,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -209,7 +212,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: CARD_BG,
+    backgroundColor: cardBg,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -219,7 +222,7 @@ const styles = StyleSheet.create({
   },
   systemStatusLabel: {
     fontSize: 12,
-    color: GREY,
+    color: grey,
     marginBottom: 4,
   },
   statusRow: {
@@ -231,12 +234,12 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: GREEN,
+    backgroundColor: green,
   },
   systemStatusValue: {
     fontSize: 18,
     fontWeight: '600',
-    color: WHITE,
+    color: white,
   },
   equalizerIcon: {
     marginLeft: 12,
@@ -244,19 +247,19 @@ const styles = StyleSheet.create({
   featureCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: CARD_BG,
+    backgroundColor: cardBg,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
   },
   featureCardHighlighted: {
-    backgroundColor: ACCENT_YELLOW,
+    backgroundColor: accentYellow,
   },
   featureIconWrap: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: CARD_BG_LIGHT,
+    backgroundColor: cardBgLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -270,7 +273,7 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: WHITE,
+    color: white,
     marginBottom: 2,
   },
   featureTitleDark: {
@@ -278,7 +281,7 @@ const styles = StyleSheet.create({
   },
   featureSubtitle: {
     fontSize: 14,
-    color: GREY,
+    color: grey,
   },
   featureSubtitleDark: {
     color: 'rgba(0, 0, 0, 0.7)',
@@ -286,7 +289,7 @@ const styles = StyleSheet.create({
   recentHeading: {
     fontSize: 14,
     fontWeight: '700',
-    color: WHITE,
+    color: white,
     textTransform: 'uppercase',
     marginTop: 24,
     marginBottom: 12,
@@ -296,7 +299,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   recentCard: {
-    backgroundColor: CARD_BG,
+    backgroundColor: cardBg,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
@@ -308,7 +311,7 @@ const styles = StyleSheet.create({
   recentTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: WHITE,
+    color: white,
     textAlign: 'center',
   },
 });

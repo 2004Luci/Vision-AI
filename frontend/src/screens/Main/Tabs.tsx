@@ -6,6 +6,7 @@ import { VoiceScreen } from '../Voice';
 import { AlertsScreen } from '../Alerts';
 import { ProfileScreen } from '../Profile';
 import { SettingsScreen } from '../Settings';
+import { colors } from '../../theme/colors';
 
 export type MainTabParamList = {
   Home: undefined;
@@ -17,21 +18,16 @@ export type MainTabParamList = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const ACCENT_YELLOW = '#FFD54F';
-const INACTIVE_WHITE = '#FFFFFF';
-const TAB_BAR_BG = '#1a1d24';
-const SCREEN_BG = '#0f1117';
-
 export function Tabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: ACCENT_YELLOW,
-        tabBarInactiveTintColor: INACTIVE_WHITE,
+        tabBarActiveTintColor: colors.accentYellow,
+        tabBarInactiveTintColor: colors.white,
         tabBarStyle: {
-          backgroundColor: TAB_BAR_BG,
-          borderTopColor: '#2d3142',
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {

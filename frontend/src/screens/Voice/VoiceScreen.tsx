@@ -8,12 +8,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../../theme/colors';
 
-const ACCENT_YELLOW = '#EEFF00';
-const SCREEN_BG = '#0f1117';
-const WHITE = '#ffffff';
-const CARD_BG = '#1a1d24';
-const DARK_BG = '#000000';
+const { accentYellow, screenBg, white, cardBg, darkBg } = colors;
 
 const BAR_COUNT = 8;
 const BAR_MIN = 0.15;
@@ -107,7 +104,7 @@ export function VoiceScreen() {
           onPress={() => setIsListening((p) => !p)}
         >
           <View style={styles.micButtonInner}>
-            <Ionicons name="mic" size={64} color={ACCENT_YELLOW} />
+            <Ionicons name="mic" size={64} color={accentYellow} />
           </View>
         </TouchableOpacity>
 
@@ -128,7 +125,7 @@ export function VoiceScreen() {
           <Ionicons
             name={isListening ? 'stop-circle' : 'mic'}
             size={24}
-            color={isListening ? '#000000' : WHITE}
+            color={isListening ? '#000000' : white}
           />
           <Text
             style={[
@@ -147,13 +144,13 @@ export function VoiceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: SCREEN_BG,
+    backgroundColor: screenBg,
     alignItems: 'center',
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: WHITE,
+    color: white,
     marginTop: 24,
     marginBottom: 32,
   },
@@ -167,9 +164,9 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: DARK_BG,
+    backgroundColor: darkBg,
     borderWidth: 3,
-    borderColor: ACCENT_YELLOW,
+    borderColor: accentYellow,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
@@ -195,13 +192,13 @@ const styles = StyleSheet.create({
   waveBar: {
     width: 4,
     height: 24,
-    backgroundColor: ACCENT_YELLOW,
+    backgroundColor: accentYellow,
     borderRadius: 2,
   },
   statusText: {
     fontSize: 16,
     fontWeight: '600',
-    color: WHITE,
+    color: white,
     letterSpacing: 2,
     marginBottom: 32,
   },
@@ -209,7 +206,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: ACCENT_YELLOW,
+    backgroundColor: accentYellow,
     paddingVertical: 16,
     paddingHorizontal: 28,
     borderRadius: 12,
@@ -217,9 +214,9 @@ const styles = StyleSheet.create({
     minWidth: 260,
   },
   stopButtonInactive: {
-    backgroundColor: CARD_BG,
+    backgroundColor: cardBg,
     borderWidth: 2,
-    borderColor: ACCENT_YELLOW,
+    borderColor: accentYellow,
   },
   stopButtonText: {
     fontSize: 16,
@@ -227,6 +224,6 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   stopButtonTextInactive: {
-    color: ACCENT_YELLOW,
+    color: accentYellow,
   },
 });

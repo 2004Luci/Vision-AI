@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
+import { colors } from '../../theme/colors';
 
 export function SettingsScreen() {
   return (
@@ -14,7 +15,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0f1117',
+    backgroundColor: colors.screenBg,
   },
-  text: { fontSize: 20, color: '#ffffff' },
+  text: { fontSize: 20, color: colors.white },
 });
