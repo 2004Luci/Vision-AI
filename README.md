@@ -83,6 +83,26 @@ Or from the Android project directory: `cd frontend/android` then `./gradlew ins
 
 Backend is implemented with FastAPI. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for backend and ML setup.
 
+## Detection Runtime Notes (Developers)
+
+- `TFLite` is the default runtime because it is typically the lowest-latency, lowest-power path on mobile (GPU/NNAPI/XNNPACK delegates).
+- Server fallback is only used when on-device runtimes are unavailable or fail at load/inference time.
+- Swap models safely by following this sequence:
+  1. Keep model binaries out of git-tracked paths (or explicitly update `.gitignore` rules first).
+  2. Match model IO contracts (`inputResolution`, YOLOv8-style outputs: `bbox + class + confidence`).
+  3. Update model asset references in `frontend/src/lib/modelManager.js`.
+  4. Unload/reload runtime (`modelManager.unload()` then `modelManager.loadRuntime(...)`) so native sessions are recreated cleanly.
+  5. Re-run the checklist below before merging.
+
+## Minimal Detection Test Checklist
+
+- [ ] Camera permission denied path shows a clear runtime error and detection does not start.
+- [ ] Start/Stop detection toggles the inference loop without app freeze/crash.
+- [ ] Runtime fallback chain works: `TFLite -> ONNX -> Server` when failures are forced.
+- [ ] Confidence threshold and NMS toggle change prediction counts as expected.
+- [ ] Snapshot capture works while detection is running.
+- [ ] FPS and inference latency values update continuously under load.
+
 ## Detailed setup
 
 See **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** for:
