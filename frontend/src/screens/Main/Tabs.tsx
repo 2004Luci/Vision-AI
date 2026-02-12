@@ -66,8 +66,12 @@ export function Tabs() {
         component={AlertsScreen}
         options={{
           title: 'ALERTS',
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="notifications-outline" size={24} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'notifications' : 'notifications-outline'}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />

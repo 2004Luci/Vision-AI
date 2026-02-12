@@ -8,6 +8,7 @@ export const colors = tokens as {
   white: string;
   grey: string;
   green: string;
+  warning: string;
   darkBg: string;
   tabBarBg: string;
   border: string;

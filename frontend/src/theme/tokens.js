@@ -10,6 +10,7 @@ module.exports = {
   white: '#ffffff',
   grey: '#9ca3af',
   green: '#22c55e',
+  warning: '#ef4444',
   darkBg: '#000000',
   tabBarBg: '#1a1d24',
   border: '#2d3142',

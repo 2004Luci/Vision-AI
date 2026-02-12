@@ -17,6 +17,7 @@ module.exports = {
         'card-light': tokens.cardBgLight,
         grey: tokens.grey,
         success: tokens.green,
+        warning: tokens.warning,
         dark: tokens.darkBg,
         'tab-bar': tokens.tabBarBg,
         border: tokens.border,
