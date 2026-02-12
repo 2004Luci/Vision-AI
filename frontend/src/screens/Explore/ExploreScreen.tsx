@@ -125,7 +125,8 @@ export function ExploreScreen() {
 
         <View style={styles.cameraCard}>
           {permission?.granted ? (
-            <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
+            <View style={styles.cameraWrap}>
+              <CameraView ref={cameraRef} style={styles.camera} facing={facing} />
               <View style={styles.badgesRow}>
                 <View
                   style={[
@@ -143,7 +144,7 @@ export function ExploreScreen() {
                   </Text>
                 </View>
               </View>
-            </CameraView>
+            </View>
           ) : (
             <View style={styles.permissionWrap}>
               <Ionicons name="camera-outline" size={34} color={ACCENT_YELLOW} />
@@ -246,12 +247,19 @@ const styles = StyleSheet.create({
     borderColor: CARD_BORDER,
     minHeight: 340,
   },
-  camera: {
-    flex: 1,
+  cameraWrap: {
     minHeight: 340,
-    justifyContent: 'space-between',
+    position: 'relative',
+  },
+  camera: {
+    width: '100%',
+    minHeight: 340,
   },
   badgesRow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
