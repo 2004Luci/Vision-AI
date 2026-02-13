@@ -10,7 +10,9 @@
     "android:apk": "node scripts/assemble-dev-release.js",
     "ios": "expo run:ios",
     "postinstall": "patch-package",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "prebuild": "expo prebuild",
+    "postprebuild": "node scripts/setup-local-properties.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
