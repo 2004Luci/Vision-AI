@@ -140,6 +140,20 @@ This runs `expo prebuild` and then a **postprebuild** script (`scripts/setup-loc
 
 `local.properties` is gitignored because it contains machine-specific paths.
 
+#### Firebase (Crashlytics)
+
+The app uses **Firebase Crashlytics** for crash reporting. Crashlytics works only in **development builds** (not in Expo Go).
+
+**Setup:**
+
+1. Create a project at [Firebase Console](https://console.firebase.google.com/).
+2. Add an **Android app** with package name `com.anonymous.VisionAI` (or `com.anonymous.VisionAI.dev` for the dev flavor).
+3. Download `google-services.json` and place it in `frontend/` (project root).
+4. Run `npm run prebuild -- --clean` from `frontend/` so the Firebase plugin picks up the config.
+5. Build the app: `npm run android:install-dev`.
+
+**Note:** `google-services.json` is committed to the repo.
+
 ### Frontend tech stack
 
 - **Expo** SDK 54
