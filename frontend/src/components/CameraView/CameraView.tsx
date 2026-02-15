@@ -8,49 +8,52 @@ import {
   useFrameProcessor,
 } from 'react-native-vision-camera'
 import type { Frame } from 'react-native-vision-camera'
-
-type Props = {
-  isActive: boolean
-  detectionEnabled: boolean
-  facing: 'front' | 'back'
-  maxFps: number
-}
+import type { CameraViewProps } from './types'
 
 export function CameraView({
+  style,
   isActive,
   detectionEnabled,
   facing,
-  maxFps,
-}: Props) {
-  const device = useCameraDevice(facing)
+  maxInferenceFps,
+}: CameraViewProps) {
+  const active = isActive ?? false
+  const enabled = detectionEnabled ?? false
+  const cameraFacing = facing ?? 'back'
+  const inferenceFps = typeof maxInferenceFps === 'number' && Number.isFinite(maxInferenceFps)
+    ? Math.max(1, Math.trunc(maxInferenceFps))
+    : 8
+
+  const device = useCameraDevice(cameraFacing)
 
   const plugin = useMemo(
     () =>
       VisionCameraProxy.initFrameProcessorPlugin('yoloFramePreprocess', {
-        facing,
+        facing: cameraFacing,
       }),
-    [facing],
+    [cameraFacing],
   )
 
   const frameProcessor = useFrameProcessor(
     (frame: Frame) => {
       'worklet'
-      if (!detectionEnabled || plugin == null) return
-      runAtTargetFps(maxFps, () => {
+      // if (!enabled || plugin == null) return
+      if (plugin == null) return
+      runAtTargetFps(inferenceFps, () => {
         'worklet'
         plugin.call(frame)
       })
     },
-    [detectionEnabled, maxFps, plugin],
+    [enabled, inferenceFps, plugin],
   )
 
   if (!device) return null
 
   return (
     <Camera
-      style={StyleSheet.absoluteFill}
+      style={[StyleSheet.absoluteFill, style]}
       device={device}
-      isActive={isActive}
+      isActive={active}
       pixelFormat="yuv"
       frameProcessor={frameProcessor}
       video={false}
@@ -58,3 +61,5 @@ export function CameraView({
     />
   )
 }
+
+export default CameraView
