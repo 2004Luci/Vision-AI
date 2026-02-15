@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import {
   Text,
   View,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { colors } from '../../../../theme';
 import { useBackHandler } from '../../../../navigators';
 import { useAuth } from '../../../../auth/AuthContext';
+import { logEvent } from '../../../../utils/logger';
 
 const PROFILE_OPTIONS = [
   {
@@ -33,6 +36,21 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { user, signOut, authAvailable } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    try {
+      await signOut();
+      logEvent('Profile:SignOutComplete');
+      // MainContainer switches to AuthStack (SignIn) when user becomes null
+    } catch (err) {
+      logEvent('Profile:SignOutError', { error: String(err) });
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   useBackHandler({
     onBack: () => navigation.goBack(),
@@ -98,19 +116,26 @@ export function ProfileScreen() {
             <TouchableOpacity
               className="bg-card rounded-2xl p-4 flex-row items-center border border-warning"
               activeOpacity={0.8}
-              onPress={() => signOut()}
+              onPress={handleSignOut}
+              disabled={isSigningOut}
             >
               <View className="w-12 h-12 rounded-full bg-card-light items-center justify-center mr-4">
-                <Ionicons
-                  name="log-out-outline"
-                  size={24}
-                  color={colors.warning}
-                />
+                {isSigningOut ? (
+                  <ActivityIndicator size="small" color={colors.warning} />
+                ) : (
+                  <Ionicons
+                    name="log-out-outline"
+                    size={24}
+                    color={colors.warning}
+                  />
+                )}
               </View>
               <Text className="text-warning text-lg font-bold flex-1">
-                Sign Out
+                {isSigningOut ? 'Signing out...' : 'Sign Out'}
               </Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.warning} />
+              {!isSigningOut && (
+                <Ionicons name="chevron-forward" size={20} color={colors.warning} />
+              )}
             </TouchableOpacity>
           )}
         </View>
