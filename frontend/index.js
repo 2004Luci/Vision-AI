@@ -12,6 +12,11 @@ import { logApp } from './src/utils/logger';
 
 crashlytics().setCrashlyticsCollectionEnabled(true);
 
-logApp('launch', { timestamp: new Date().toISOString() });
+logApp('launch', {
+  component: 'main',
+  initialProps: {},
+  fabric: !!global?.nativeFabricUIManager,
+  timestamp: new Date().toISOString(),
+});
 
 AppRegistry.registerComponent('main', () => App);
