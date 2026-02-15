@@ -92,10 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       await GoogleSignin.hasPlayServices();
-      const { idToken } = await GoogleSignin.signIn();
-      if (!idToken) {
+      const response = await GoogleSignin.signIn();
+      if (response.type === 'cancelled') {
         logEvent('Auth:SignInWithGoogleCancelled');
         throw new Error('Google Sign-In was cancelled');
+      }
+      const idToken = response.data.idToken;
+      if (!idToken) {
+        logEvent('Auth:SignInWithGoogleError', { error: 'No id token returned' });
+        throw new Error('Google Sign-In failed: no id token returned');
       }
       const credential = auth.GoogleAuthProvider.credential(idToken);
       await auth().signInWithCredential(credential);
