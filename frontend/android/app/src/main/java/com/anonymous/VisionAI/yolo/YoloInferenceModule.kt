@@ -1,9 +1,21 @@
 package com.anonymous.VisionAI.yolo
 
-import com.facebook.react.bridge.Promise
+import android.media.Image
+import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.mrousavy.camera.core.types.Orientation
+import com.mrousavy.camera.frameprocessors.Frame
+import com.mrousavy.camera.frameprocessors.FrameProcessorPlugin
+import com.mrousavy.camera.frameprocessors.FrameProcessorPluginRegistry
+import org.tensorflow.lite.Interpreter
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
+import java.util.concurrent.atomic.AtomicBoolean
 
 class YoloInferenceModule(
   reactContext: ReactApplicationContext
@@ -11,32 +23,230 @@ class YoloInferenceModule(
 
   override fun getName(): String = NAME
 
-  @Volatile
-  private var isModelInitialized = false
+  init {
+    moduleInstance = this
+    registerFrameProcessorPlugin()
+  }
+
+  /* =========================
+     Interpreter (STEP 3)
+     ========================= */
+
+  @Volatile private var interpreter: Interpreter? = null
+  private val interpreterLock = Any()
 
   @ReactMethod
-  fun initializeModel(promise: Promise) {
-    if (isModelInitialized) {
-      promise.resolve("ready")
+  fun initializeModel(promise: com.facebook.react.bridge.Promise) {
+    if (interpreter != null) {
+      promise.resolve("already_initialized")
       return
     }
 
-    // Real model loading will be added in STEP 3
-    isModelInitialized = true
-    promise.resolve("ready")
+    try {
+      synchronized(interpreterLock) {
+        if (interpreter != null) {
+          promise.resolve("already_initialized")
+          return
+        }
+
+        val options = Interpreter.Options().apply {
+          setNumThreads(4)
+        }
+
+        val modelBuffer = loadModelFile(MODEL_FILE_NAME)
+        val loaded = Interpreter(modelBuffer, options)
+        interpreter = loaded
+
+        logTensorShapes(loaded)
+      }
+
+      promise.resolve("model_loaded")
+    } catch (e: Exception) {
+      promise.reject("MODEL_INIT_ERROR", e)
+    }
   }
 
-  @ReactMethod
-  fun startDetection() {
-    // Stub: will start inference loop later
+  @ReactMethod fun startDetection() {}
+  @ReactMethod fun stopDetection() {}
+
+  override fun invalidate() {
+    synchronized(interpreterLock) {
+      interpreter?.close()
+      interpreter = null
+    }
+    if (moduleInstance === this) moduleInstance = null
+    super.invalidate()
   }
 
-  @ReactMethod
-  fun stopDetection() {
-    // Stub: will stop inference loop later
+  /* =========================
+     Frame preprocessing (STEP 4)
+     ========================= */
+
+  private val preprocessLock = Any()
+  private val loggedIngress = AtomicBoolean(false)
+  private val loggedPreprocess = AtomicBoolean(false)
+
+  private val inputBuffer: ByteBuffer =
+    ByteBuffer.allocateDirect(
+      MODEL_INPUT_WIDTH * MODEL_INPUT_HEIGHT * MODEL_INPUT_CHANNELS * 4
+    ).order(ByteOrder.nativeOrder())
+
+  private fun processFrame(frame: Frame, facing: CameraFacing) {
+    // 🔴 REQUIRED GUARD
+    if (interpreter == null) return
+
+    val image = frame.image
+    val rotation = orientationToRotationDegrees(frame.orientation)
+
+    synchronized(preprocessLock) {
+      if (loggedIngress.compareAndSet(false, true)) {
+        Log.d(TAG, "Frame received: ${frame.width}x${frame.height}, rotation=$rotation, facing=$facing")
+      }
+
+      preprocessYuv(
+        image = image,
+        rotationDegrees = rotation,
+        mirror = facing == CameraFacing.FRONT
+      )
+
+      if (loggedPreprocess.compareAndSet(false, true)) {
+        Log.d(TAG, "Preprocessed tensor ready: [1,640,640,3]")
+      }
+    }
+  }
+
+  private fun preprocessYuv(
+    image: Image,
+    rotationDegrees: Int,
+    mirror: Boolean
+  ) {
+    val yPlane = image.planes[0]
+    val uPlane = image.planes[1]
+    val vPlane = image.planes[2]
+
+    val yBuf = yPlane.buffer
+    val uBuf = uPlane.buffer
+    val vBuf = vPlane.buffer
+
+    val srcW = image.width
+    val srcH = image.height
+    val rot = normalizeRotation(rotationDegrees)
+
+    val rotW = if (rot == 90 || rot == 270) srcH else srcW
+    val rotH = if (rot == 90 || rot == 270) srcW else srcH
+
+    val scaleX = rotW.toFloat() / MODEL_INPUT_WIDTH
+    val scaleY = rotH.toFloat() / MODEL_INPUT_HEIGHT
+
+    inputBuffer.rewind()
+
+    for (oy in 0 until MODEL_INPUT_HEIGHT) {
+      val ry = ((oy + 0.5f) * scaleY).toInt().coerceIn(0, rotH - 1)
+      for (ox in 0 until MODEL_INPUT_WIDTH) {
+        var rx = ((ox + 0.5f) * scaleX).toInt().coerceIn(0, rotW - 1)
+        if (mirror) rx = rotW - 1 - rx
+
+        val (sx, sy) = when (rot) {
+          90 -> Pair(ry, srcH - 1 - rx)
+          180 -> Pair(srcW - 1 - rx, srcH - 1 - ry)
+          270 -> Pair(srcW - 1 - ry, rx)
+          else -> Pair(rx, ry)
+        }
+
+        val yIdx = sy * yPlane.rowStride + sx * yPlane.pixelStride
+        val uvX = sx / 2
+        val uvY = sy / 2
+        val uIdx = uvY * uPlane.rowStride + uvX * uPlane.pixelStride
+        val vIdx = uvY * vPlane.rowStride + uvX * vPlane.pixelStride
+
+        val y = (yBuf.get(yIdx).toInt() and 0xFF).toFloat()
+        val u = ((uBuf.get(uIdx).toInt() and 0xFF) - 128).toFloat()
+        val v = ((vBuf.get(vIdx).toInt() and 0xFF) - 128).toFloat()
+
+        val r = clamp(y + 1.402f * v) * INV_255
+        val g = clamp(y - 0.344136f * u - 0.714136f * v) * INV_255
+        val b = clamp(y + 1.772f * u) * INV_255
+
+        inputBuffer.putFloat(r)
+        inputBuffer.putFloat(g)
+        inputBuffer.putFloat(b)
+      }
+    }
+
+    inputBuffer.rewind()
+  }
+
+  /* =========================
+     Helpers
+     ========================= */
+
+  private fun loadModelFile(name: String): MappedByteBuffer =
+    reactApplicationContext.assets.openFd(name).use {
+      FileInputStream(it.fileDescriptor).channel.map(
+        FileChannel.MapMode.READ_ONLY,
+        it.startOffset,
+        it.declaredLength
+      )
+    }
+
+  private fun logTensorShapes(i: Interpreter) {
+    Log.d(TAG, "Input shape: ${i.getInputTensor(0).shape().contentToString()}")
+    Log.d(TAG, "Output shape: ${i.getOutputTensor(0).shape().contentToString()}")
+  }
+
+  private fun normalizeRotation(r: Int) =
+    ((r % 360) + 360) % 360
+
+  private fun orientationToRotationDegrees(o: Orientation) =
+    when (o) {
+      Orientation.PORTRAIT -> 0
+      Orientation.LANDSCAPE_RIGHT -> 90
+      Orientation.PORTRAIT_UPSIDE_DOWN -> 180
+      Orientation.LANDSCAPE_LEFT -> 270
+    }
+
+  private fun clamp(v: Float) = v.coerceIn(0f, 255f)
+
+  /* =========================
+     FrameProcessor plugin
+     ========================= */
+
+  private class YoloPlugin(
+    private val defaultFacing: CameraFacing
+  ) : FrameProcessorPlugin() {
+    override fun callback(frame: Frame, params: Map<String, Any>?): Any? {
+      val module = moduleInstance ?: return null
+      val facing = when ((params?.get("facing") as? String)?.lowercase()) {
+        "front" -> CameraFacing.FRONT
+        else -> defaultFacing
+      }
+      module.processFrame(frame, facing)
+      return null
+    }
   }
 
   companion object {
     const val NAME = "YoloInferenceModule"
+    private const val TAG = "YoloInferenceModule"
+    private const val MODEL_FILE_NAME = "yolov8n.tflite"
+
+    private const val MODEL_INPUT_WIDTH = 640
+    private const val MODEL_INPUT_HEIGHT = 640
+    private const val MODEL_INPUT_CHANNELS = 3
+    private const val INV_255 = 1f / 255f
+
+    @Volatile private var moduleInstance: YoloInferenceModule? = null
+    private val registered = AtomicBoolean(false)
+
+    private fun registerFrameProcessorPlugin() {
+      if (!registered.compareAndSet(false, true)) return
+      FrameProcessorPluginRegistry.addFrameProcessorPlugin("yoloFramePreprocess") { _, opts ->
+        val facing = if ((opts?.get("facing") as? String) == "front")
+          CameraFacing.FRONT else CameraFacing.BACK
+        YoloPlugin(facing)
+      }
+    }
   }
+
+  private enum class CameraFacing { FRONT, BACK }
 }
