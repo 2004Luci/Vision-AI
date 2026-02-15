@@ -11,6 +11,20 @@ import { logEvent } from '../../utils/logger';
 
 const SPLASH_DURATION_MS = 11_000;
 
+const darkTheme = {
+  ...DefaultTheme,
+  dark: true,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.accentYellow,
+    background: colors.screenBg,
+    card: colors.cardBg,
+    text: colors.white,
+    border: colors.border,
+    notification: colors.accentYellow,
+  },
+};
+
 export function MainContainer() {
   const [isSplashVisible, setIsSplashVisible] = useState<boolean>(true);
   const { user, loading, authAvailable } = useAuth();
