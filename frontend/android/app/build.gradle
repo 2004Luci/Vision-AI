@@ -185,6 +185,9 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
+    // TensorFlow Lite CPU runtime
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+
     // GIF and WebP support
     implementation("com.facebook.fresco:animated-gif:3.4.0")
     implementation("com.facebook.fresco:webpsupport:3.4.0")
