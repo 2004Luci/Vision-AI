@@ -1,13 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  type LayoutChangeEvent,
-  NativeModules,
-  StyleSheet,
-  type DimensionValue,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { NativeModules, StyleSheet, type LayoutChangeEvent, View } from 'react-native';
 
-type NativeDetection = {
+type Detection = {
   x1: number;
   y1: number;
   x2: number;
@@ -23,26 +17,23 @@ type ViewSize = {
   height: number;
 };
 
-type MappedBox = {
-  key: string;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
+type DetectionOverlayProps = {
+  enabled?: boolean;
 };
 
 const MODEL_SIZE = 640;
-const POLL_INTERVAL_MS = 200;
+const NATIVE_PULL_INTERVAL_MS = 200;
+const MAX_RENDER_BOXES = 20;
 
 const toFiniteNumber = (value: unknown): number | null => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   return value;
 };
 
-const normalizeDetections = (payload: unknown): NativeDetection[] => {
+const normalizeDetections = (payload: unknown): Detection[] => {
   if (!Array.isArray(payload)) return [];
 
-  const normalized: NativeDetection[] = [];
+  const normalized: Detection[] = [];
   for (const item of payload) {
     if (!item || typeof item !== 'object') continue;
     const record = item as Record<string, unknown>;
@@ -61,7 +52,7 @@ const clamp = (value: number, min: number, max: number): number => {
   return Math.max(min, Math.min(max, value));
 };
 
-const mapDetectionToBox = (detection: NativeDetection, viewSize: ViewSize, index: number): MappedBox => {
+const mapDetectionToBox = (detection: Detection, viewSize: ViewSize) => {
   const scaleX = viewSize.width / MODEL_SIZE;
   const scaleY = viewSize.height / MODEL_SIZE;
 
@@ -70,93 +61,165 @@ const mapDetectionToBox = (detection: NativeDetection, viewSize: ViewSize, index
   const top = clamp(Math.min(detection.y1, detection.y2) * scaleY, 0, viewSize.height);
   const bottom = clamp(Math.max(detection.y1, detection.y2) * scaleY, 0, viewSize.height);
 
-  const width = Math.max(0, right - left);
-  const height = Math.max(0, bottom - top);
-
   return {
-    key: `${index}-${Math.round(left)}-${Math.round(top)}-${Math.round(width)}-${Math.round(height)}`,
     left,
     top,
-    width,
-    height,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
   };
 };
 
-const detectionsAreEqual = (a: NativeDetection[], b: NativeDetection[]): boolean => {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i += 1) {
-    if (a[i].x1 !== b[i].x1 || a[i].y1 !== b[i].y1 || a[i].x2 !== b[i].x2 || a[i].y2 !== b[i].y2) {
-      return false;
-    }
-  }
-  return true;
-};
-
-type DetectionOverlayProps = {
-  enabled?: boolean;
-};
-
-export function DetectionOverlay({ enabled = true }: DetectionOverlayProps) {
-  const [viewSize, setViewSize] = useState<ViewSize>({ width: 0, height: 0 });
-  const [detections, setDetections] = useState<NativeDetection[]>([]);
-
-  const handleLayout = useCallback((event: LayoutChangeEvent) => {
-    const { width, height } = event.nativeEvent.layout;
-    setViewSize((current) => {
-      if (current.width === width && current.height === height) {
-        return current;
-      }
-      return { width, height };
-    });
-  }, []);
+function useLatestDetectionsLoop(enabled: boolean) {
+  const latestDetectionsRef = useRef<Detection[]>([]);
+  const detectionsVersionRef = useRef(0);
+  const lastNativePullAtRef = useRef(0);
 
   useEffect(() => {
-    if (!enabled) {
-      setDetections([]);
-      return;
-    }
+    latestDetectionsRef.current = [];
+    lastNativePullAtRef.current = 0;
+    detectionsVersionRef.current = 0;
+
+    if (!enabled) return;
 
     const module = NativeModules?.YoloInferenceModule as YoloInferenceModule | undefined;
     if (typeof module?.getLatestDetections !== 'function') return;
 
-    const pullLatest = () => {
-      try {
-        const payload = module.getLatestDetections?.();
-        const nextDetections = normalizeDetections(payload);
-        setDetections((current) => (detectionsAreEqual(current, nextDetections) ? current : nextDetections));
-      } catch {
-        setDetections([]);
+    let rafId = 0;
+    let cancelled = false;
+
+    const loop = (timestamp: number) => {
+      if (cancelled) return;
+
+      if (timestamp - lastNativePullAtRef.current >= NATIVE_PULL_INTERVAL_MS) {
+        lastNativePullAtRef.current = timestamp;
+        try {
+          const payload = module.getLatestDetections?.();
+          latestDetectionsRef.current = normalizeDetections(payload);
+          detectionsVersionRef.current += 1;
+        } catch {
+          latestDetectionsRef.current = [];
+          detectionsVersionRef.current += 1;
+        }
       }
+
+      rafId = requestAnimationFrame(loop);
     };
 
-    pullLatest();
-    const intervalId = setInterval(pullLatest, POLL_INTERVAL_MS);
-
+    rafId = requestAnimationFrame(loop);
     return () => {
-      clearInterval(intervalId);
+      cancelled = true;
+      cancelAnimationFrame(rafId);
     };
   }, [enabled]);
 
-  const boxes = useMemo(() => {
-    if (viewSize.width <= 0 || viewSize.height <= 0) return [];
-    return detections.map((detection, index) => mapDetectionToBox(detection, viewSize, index));
-  }, [detections, viewSize]);
+  return { latestDetectionsRef, detectionsVersionRef };
+}
+
+export function DetectionOverlay({ enabled = true }: DetectionOverlayProps) {
+  const { latestDetectionsRef, detectionsVersionRef } = useLatestDetectionsLoop(enabled);
+  const viewSizeRef = useRef<ViewSize>({ width: 0, height: 0 });
+  const boxRefs = useRef<Array<View | null>>([]);
+  const lastDrawnVersionRef = useRef(-1);
+
+  const boxRefCallbacks = useMemo(
+    () =>
+      Array.from({ length: MAX_RENDER_BOXES }, (_, index) => (node: View | null) => {
+        boxRefs.current[index] = node;
+      }),
+    [],
+  );
+
+  const hideAllBoxes = useCallback(() => {
+    for (let index = 0; index < MAX_RENDER_BOXES; index += 1) {
+      boxRefs.current[index]?.setNativeProps({
+        style: {
+          opacity: 0,
+          left: 0,
+          top: 0,
+          width: 0,
+          height: 0,
+        },
+      });
+    }
+  }, []);
+
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    viewSizeRef.current = { width, height };
+    lastDrawnVersionRef.current = -1;
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) {
+      hideAllBoxes();
+      lastDrawnVersionRef.current = -1;
+      return;
+    }
+
+    let rafId = 0;
+    let cancelled = false;
+    lastDrawnVersionRef.current = -1;
+
+    const draw = () => {
+      if (cancelled) return;
+
+      const currentVersion = detectionsVersionRef.current;
+      const { width, height } = viewSizeRef.current;
+      if (lastDrawnVersionRef.current === currentVersion && width > 0 && height > 0) {
+        rafId = requestAnimationFrame(draw);
+        return;
+      }
+
+      if (width > 0 && height > 0) {
+        const detections = latestDetectionsRef.current;
+        const renderCount = Math.min(detections.length, MAX_RENDER_BOXES);
+
+        for (let index = 0; index < MAX_RENDER_BOXES; index += 1) {
+          const boxView = boxRefs.current[index];
+          if (!boxView) continue;
+
+          if (index < renderCount) {
+            const mapped = mapDetectionToBox(detections[index], viewSizeRef.current);
+            boxView.setNativeProps({
+              style: {
+                opacity: 1,
+                left: mapped.left,
+                top: mapped.top,
+                width: mapped.width,
+                height: mapped.height,
+              },
+            });
+          } else {
+            boxView.setNativeProps({
+              style: {
+                opacity: 0,
+                left: 0,
+                top: 0,
+                width: 0,
+                height: 0,
+              },
+            });
+          }
+        }
+        lastDrawnVersionRef.current = currentVersion;
+      }
+
+      rafId = requestAnimationFrame(draw);
+    };
+
+    rafId = requestAnimationFrame(draw);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      hideAllBoxes();
+      lastDrawnVersionRef.current = -1;
+    };
+  }, [detectionsVersionRef, enabled, hideAllBoxes, latestDetectionsRef]);
 
   return (
     <View pointerEvents="none" style={styles.overlay} onLayout={handleLayout}>
-      {boxes.map((box) => (
-        <View
-          key={box.key}
-          style={[
-            styles.box,
-            {
-              left: box.left as DimensionValue,
-              top: box.top as DimensionValue,
-              width: box.width as DimensionValue,
-              height: box.height as DimensionValue,
-            },
-          ]}
-        />
+      {boxRefCallbacks.map((setRef, index) => (
+        <View key={`overlay-box-${index}`} ref={setRef} style={styles.box} />
       ))}
     </View>
   );
@@ -169,6 +232,11 @@ const styles = StyleSheet.create({
   },
   box: {
     position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+    opacity: 0,
     borderWidth: 3,
     borderColor: '#00FF00',
   },
