@@ -1,28 +1,27 @@
-# VisionAI â€“ Assistive Technology for the Visually Impaired
+# VisionAI - Assistive Technology for the Visually Impaired
 
 A prototype application that helps blind and visually impaired individuals by providing real-time object descriptions through camera input and text-to-speech output.
 
 ## Features
 
-- Real-time camera object detection (planned)
-- Offline ML model processing (planned)
-- Text-to-speech audio feedback (planned)
+- **Real-time camera object detection** — on-device (TFLite/ONNX) or server fallback
+- **Firebase Auth** — email/password and Google Sign-In
 - **React Native CLI** mobile app with **TypeScript** and **Tailwind (NativeWind)**
-- **FastAPI** backend API (Python)
-- **ML models** in a dedicated `models/` folder (planned)
+- **FastAPI** backend API (Python) — `POST /v1/detect` for server-side inference
+- **Reactotron** — dev logging and debugging
 
 ## Project Structure
 
 ```
 VisionAI/
-â”œâ”€â”€ frontend/         # React Native CLI app (TypeScript, NativeWind)
-â”œâ”€â”€ backend/         # FastAPI backend (Python)
-â”œâ”€â”€ models/          # ML models (to be added)
-â”œâ”€â”€ .githooks/       # Git hooks (branch name validation)
-â”œâ”€â”€ .github/         # CI workflows
-â”œâ”€â”€ package.json     # Root scripts (runs frontend commands)
-â”œâ”€â”€ README.md
-â””â”€â”€ SETUP_INSTRUCTIONS.md
+├── frontend/         # React Native CLI app (TypeScript, NativeWind)
+├── backend/          # FastAPI backend (Python)
+├── models/           # ML models (to be added)
+├── .githooks/        # Git hooks (branch name validation)
+├── .github/          # CI workflows
+├── package.json      # Root scripts (runs frontend commands)
+├── README.md
+└── SETUP_INSTRUCTIONS.md
 ```
 
 ## Quick Start
@@ -58,13 +57,24 @@ npm start
 To build and install the **dev debug** app on a connected Android device or emulator:
 
 ```bash
-cd frontend
 npm run android:install-dev
 ```
 
-Or from the Android project directory: `cd frontend/android` then `./gradlew installDevDebug` (macOS/Linux) or `gradlew.bat installDevDebug` (Windows). That builds and installs the dev variant (app id: `com.anonymous.VisionAI.dev`). If the build fails with "SDK location not found", run `npm run prebuild` from `frontend/`â€”the postprebuild script recreates `local.properties` automatically. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md#prebuild-and-localproperties) for details.
+(From repo root; or `cd frontend && npm run android:install-dev`)
 
-**NDK:** The project is pinned to **NDK 26.1.10909125**. Install it via **Android Studio â†’ SDK Manager â†’ SDK Tools** â†’ "Show Package Details" â†’ **NDK** â†’ **26.1.10909125** â†’ Apply. If only NDK 27 is installed, the native build can fail with undefined C++ symbol errors. A patched React Native header (`graphicsConversions.h`) is applied automatically (via `patch-package` and the app's Gradle/CMake setup) for NDK 26 compatibility.
+Or from the Android project directory: `cd frontend/android` then `./gradlew installDevDebug` (macOS/Linux) or `gradlew.bat installDevDebug` (Windows). That builds and installs the dev variant (app id: `com.anonymous.VisionAI.dev`). If the build fails with "SDK location not found", run `npm run prebuild` from `frontend/`—the postprebuild script recreates `local.properties` automatically. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md#prebuild-and-localproperties) for details.
+
+### Android release APK (shareable build)
+
+To build a **release APK** for real devices (arm64 only, smaller size):
+
+```bash
+npm run android:apk
+```
+
+(From repo root; or `cd frontend && npm run android:apk`). Output: `frontend/android/app/build/outputs/apk/dev/release/app-dev-release.apk`. Use `android:install-dev` for emulator (includes x86).
+
+**NDK:** The project is pinned to **NDK 26.1.10909125**. Install it via **Android Studio -> SDK Manager -> SDK Tools** -> "Show Package Details" -> **NDK** -> **26.1.10909125** -> Apply. If only NDK 27 is installed, the native build can fail with undefined C++ symbol errors. A patched React Native header (`graphicsConversions.h`) is applied automatically (via `patch-package` and the app's Gradle/CMake setup) for NDK 26 compatibility.
 
 ### Backend (FastAPI)
 
@@ -127,10 +137,10 @@ See **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** for:
 ## Branching & pull request workflow
 
 1. **Create a branch** with a suitable name (enforced by pre-commit):
-   - `feature/<slug>` â€” new features (e.g. `feature/camera-settings`)
-   - `bugfix/<slug>` â€” bug fixes (e.g. `bugfix/audio-crash`)
-   - `update/<slug>` â€” updates or refactors (e.g. `update/deps`)
-   - `release/<slug>` â€” release prep (e.g. `release/1.0.0`)
+   - `feature/<slug>` — new features (e.g. `feature/camera-settings`)
+   - `bugfix/<slug>` — bug fixes (e.g. `bugfix/audio-crash`)
+   - `update/<slug>` — updates or refactors (e.g. `update/deps`)
+   - `release/<slug>` — release prep (e.g. `release/1.0.0`)
    - Use lowercase letters, numbers, dots, underscores, hyphens only.
 
 2. **Open a PR into `development`** (not `main`). Get review and merge to `development`.
