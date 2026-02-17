@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, NativeModules, Platform } from 'react-native';
-import modelManager from '../../../lib/modelManager';
+import modelManager from '@/lib/modelManager';
 import { formatError } from '../utils';
 import type {
   InferenceResult,

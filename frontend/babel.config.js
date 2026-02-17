@@ -7,7 +7,19 @@ module.exports = function (api) {
     ],
     plugins: [
       'react-native-worklets-core/plugin',
+      
+      [
+        'module-resolver',
+        {
+          root: ['.'],
+          extensions: ['.ts', '.tsx', '.android.tsx', '.ios.tsx'],
+          alias: {
+            '@': './src',
+          },
+        },
+      ],
       'react-native-reanimated/plugin',
+    ,
     ],
   };
 };
