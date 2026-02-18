@@ -197,6 +197,9 @@ dependencies {
 
     // TensorFlow Lite CPU runtime
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
     // GIF and WebP support
     implementation("com.facebook.fresco:animated-gif:3.4.0")

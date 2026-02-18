@@ -1,5 +1,9 @@
 package com.anonymous.VisionAI.yolo
 
+import android.graphics.Bitmap
+import android.graphics.ImageFormat
+import android.graphics.Rect
+import android.graphics.YuvImage
 import android.media.Image
 import android.os.SystemClock
 import android.util.Log
@@ -9,11 +13,14 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.WritableArray
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.mrousavy.camera.core.types.Orientation
 import com.mrousavy.camera.frameprocessors.Frame
 import com.mrousavy.camera.frameprocessors.FrameProcessorPlugin
 import com.mrousavy.camera.frameprocessors.FrameProcessorPluginRegistry
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.gpu.GpuDelegate
+import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -40,6 +47,7 @@ class YoloInferenceModule(
      ========================= */
 
   @Volatile private var interpreter: Interpreter? = null
+  @Volatile private var gpuDelegate: GpuDelegate? = null
   private val interpreterLock = Any()
   private val latestDetectionsRef: AtomicReference<List<DecodedDetection>> =
     AtomicReference(emptyList())
@@ -63,22 +71,35 @@ class YoloInferenceModule(
           return
         }
 
-        val options = Interpreter.Options().apply {
-          setNumThreads(4)
+        val modelBuffer = loadModelFile(MODEL_FILE_NAME)
+
+        try {
+          // Attempt to use GPU delegate
+          val gpu = GpuDelegate()
+          gpuDelegate = gpu
+          val opts = Interpreter.Options().apply {
+            addDelegate(gpu)
+            setNumThreads(2)
+          }
+          interpreter = Interpreter(modelBuffer, opts)
+          Log.d(TAG, "Using GPU delegate")
+        } catch (e: Throwable) {
+          // GPU failed — fallback to CPU
+          Log.w(TAG, "GPU delegate failed, falling back to CPU: ${e.message}")
+          gpuDelegate = null
+          val opts = Interpreter.Options().apply { setNumThreads(4) }
+          interpreter = Interpreter(modelBuffer, opts)
         }
 
-        val modelBuffer = loadModelFile(MODEL_FILE_NAME)
-        val loaded = Interpreter(modelBuffer, options)
-        interpreter = loaded
-
-        logTensorShapes(loaded)
+        interpreter?.let { logTensorShapes(it) }
       }
-
       promise.resolve("model_loaded")
-    } catch (e: Exception) {
-      promise.reject("MODEL_INIT_ERROR", e)
+    } catch (e: Throwable) {
+      Log.e(TAG, "initializeModel failed", e)
+      promise.reject("MODEL_INIT_ERROR", e.message ?: "unknown error")
     }
   }
+
 
   @ReactMethod fun startDetection() {}
   @ReactMethod fun stopDetection() {}
@@ -118,6 +139,8 @@ class YoloInferenceModule(
 
   override fun invalidate() {
     synchronized(interpreterLock) {
+      gpuDelegate?.close()
+      gpuDelegate = null
       interpreter?.close()
       interpreter = null
     }
@@ -198,7 +221,7 @@ class YoloInferenceModule(
     val elapsedSinceLast = nowMs - lastInferenceTimeMs
     if (elapsedSinceLast < MIN_INFERENCE_INTERVAL_MS) {
       skippedFramesDueCadence.incrementAndGet()
-      Log.d(TAG, "Inference skipped (cadence): ${elapsedSinceLast}ms since last run")
+      if (VERBOSE_LOGGING) Log.d(TAG, "Inference skipped (cadence): ${elapsedSinceLast}ms since last run")
       return
     }
 
@@ -211,7 +234,7 @@ class YoloInferenceModule(
       val guardedElapsedSinceLast = guardedNowMs - lastInferenceTimeMs
       if (guardedElapsedSinceLast < MIN_INFERENCE_INTERVAL_MS) {
         skippedFramesDueCadence.incrementAndGet()
-        Log.d(TAG, "Inference skipped (cadence): ${guardedElapsedSinceLast}ms since last run")
+        if (VERBOSE_LOGGING) Log.d(TAG, "Inference skipped (cadence): ${guardedElapsedSinceLast}ms since last run")
         return
       }
 
@@ -222,12 +245,12 @@ class YoloInferenceModule(
       }
 
       lastInferenceTimeMs = guardedNowMs
-      Log.d(TAG, "Inference started")
+      if (VERBOSE_LOGGING) Log.d(TAG, "Inference started")
 
       val inferenceStartMs = SystemClock.elapsedRealtime()
       localInterpreter.run(inputBuffer, outputBuffer)
       val inferenceDurationMs = SystemClock.elapsedRealtime() - inferenceStartMs
-      Log.d(TAG, "Inference completed in ${inferenceDurationMs}ms")
+      if (VERBOSE_LOGGING) Log.d(TAG, "Inference completed in ${inferenceDurationMs}ms")
 
       val x = outputBuffer[0][0][0]
       val y = outputBuffer[0][1][0]
@@ -236,8 +259,8 @@ class YoloInferenceModule(
       val cls0 = outputBuffer[0][4][0]
       val cls1 = outputBuffer[0][5][0]
 
-      Log.d(TAG, "Inference run complete: output shape [1,84,8400]")
-      Log.d(TAG, "Output sample: x=$x, y=$y, w=$w, h=$h, cls0=$cls0, cls1=$cls1")
+      if (VERBOSE_LOGGING) Log.d(TAG, "Inference run complete: output shape [1,84,8400]")
+      if (VERBOSE_LOGGING) Log.d(TAG, "Output sample: x=$x, y=$y, w=$w, h=$h, cls0=$cls0, cls1=$cls1")
 
       val decodeStartMs = SystemClock.elapsedRealtime()
       val decodedDetections = decodeDetections(outputBuffer)
@@ -248,6 +271,7 @@ class YoloInferenceModule(
       val nmsDetections = applyNms(decodedDetections, IOU_THRESHOLD, MAX_DETECTIONS)
       val nmsMs = SystemClock.elapsedRealtime() - nmsStartMs
       latestDetectionsRef.set(nmsDetections)
+      emitDetections(nmsDetections)
 
       Log.d(TAG, "Detections after NMS: ${nmsDetections.size}")
       logTopDecodedDetections(nmsDetections)
@@ -274,13 +298,13 @@ class YoloInferenceModule(
         )
       )
 
-      Log.d(TAG, "preprocess: ${preprocessMs}ms")
-      Log.d(TAG, "inference: ${inferenceDurationMs}ms")
-      Log.d(TAG, "decode: ${decodeMs}ms")
-      Log.d(TAG, "nms: ${nmsMs}ms")
-      Log.d(TAG, "total: ${totalMs}ms")
-      Log.d(TAG, "skipped frames: ${skippedFramesDueCadence.get()}")
-      Log.d(TAG, "effective fps: ${String.format(Locale.US, "%.1f", effectiveFps)}")
+      if (VERBOSE_LOGGING) Log.d(TAG, "preprocess: ${preprocessMs}ms")
+      if (VERBOSE_LOGGING) Log.d(TAG, "inference: ${inferenceDurationMs}ms")
+      if (VERBOSE_LOGGING) Log.d(TAG, "decode: ${decodeMs}ms")
+      if (VERBOSE_LOGGING) Log.d(TAG, "nms: ${nmsMs}ms")
+      if (VERBOSE_LOGGING) Log.d(TAG, "total: ${totalMs}ms")
+      if (VERBOSE_LOGGING) Log.d(TAG, "skipped frames: ${skippedFramesDueCadence.get()}")
+      if (VERBOSE_LOGGING) Log.d(TAG, "effective fps: ${String.format(Locale.US, "%.1f", effectiveFps)}")
     } catch (e: Exception) {
       Log.e(TAG, "Inference run failed", e)
     } finally {
@@ -348,6 +372,29 @@ class YoloInferenceModule(
     }
   }
 
+  private fun emitDetections(detections: List<DecodedDetection>) {
+    try {
+      val arr = Arguments.createArray()
+      for (d in detections) {
+        val item = Arguments.createMap()
+        item.putInt("classId", d.classIndex)
+        item.putDouble("confidence", d.confidence.toDouble())
+        item.putDouble("x1", d.x1.toDouble())
+        item.putDouble("y1", d.y1.toDouble())
+        item.putDouble("x2", d.x2.toDouble())
+        item.putDouble("y2", d.y2.toDouble())
+        arr.pushMap(item)
+      }
+      val params = Arguments.createMap()
+      params.putArray("detections", arr)
+      reactApplicationContext
+        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        .emit("onYoloDetections", params)
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to emit detections", e)
+    }
+  }
+
   private fun applyNms(
     detections: List<DecodedDetection>,
     iouThreshold: Float,
@@ -405,57 +452,46 @@ class YoloInferenceModule(
     val yPlane = image.planes[0]
     val uPlane = image.planes[1]
     val vPlane = image.planes[2]
-
-    val yBuf = yPlane.buffer
-    val uBuf = uPlane.buffer
-    val vBuf = vPlane.buffer
+    val ySize = yPlane.buffer.remaining()
+    val uSize = uPlane.buffer.remaining()
+    val vSize = vPlane.buffer.remaining()
+    val nv21 = ByteArray(ySize + uSize + vSize)
+    yPlane.buffer.get(nv21, 0, ySize)
+    vPlane.buffer.get(nv21, ySize, vSize)
+    uPlane.buffer.get(nv21, ySize + vSize, uSize)
 
     val srcW = image.width
     val srcH = image.height
+    val yuvImage = YuvImage(nv21, ImageFormat.NV21, srcW, srcH, null)
+    val out = ByteArrayOutputStream()
+    yuvImage.compressToJpeg(Rect(0, 0, srcW, srcH), 85, out)
+    val jpegBytes = out.toByteArray()
+    val rawBitmap = android.graphics.BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
+      ?: return
+
     val rot = normalizeRotation(rotationDegrees)
+    val matrix = android.graphics.Matrix()
+    if (rot != 0) matrix.postRotate(rot.toFloat())
+    if (mirror) matrix.postScale(-1f, 1f, rawBitmap.width / 2f, rawBitmap.height / 2f)
+    val rotated = if (rot != 0 || mirror)
+      Bitmap.createBitmap(rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, false)
+    else rawBitmap
+    val scaled = Bitmap.createScaledBitmap(rotated, MODEL_INPUT_WIDTH, MODEL_INPUT_HEIGHT, true)
 
-    val rotW = if (rot == 90 || rot == 270) srcH else srcW
-    val rotH = if (rot == 90 || rot == 270) srcW else srcH
-
-    val scaleX = rotW.toFloat() / MODEL_INPUT_WIDTH
-    val scaleY = rotH.toFloat() / MODEL_INPUT_HEIGHT
+    val pixels = IntArray(MODEL_INPUT_WIDTH * MODEL_INPUT_HEIGHT)
+    scaled.getPixels(pixels, 0, MODEL_INPUT_WIDTH, 0, 0, MODEL_INPUT_WIDTH, MODEL_INPUT_HEIGHT)
 
     inputBuffer.rewind()
-
-    for (oy in 0 until MODEL_INPUT_HEIGHT) {
-      val ry = ((oy + 0.5f) * scaleY).toInt().coerceIn(0, rotH - 1)
-      for (ox in 0 until MODEL_INPUT_WIDTH) {
-        var rx = ((ox + 0.5f) * scaleX).toInt().coerceIn(0, rotW - 1)
-        if (mirror) rx = rotW - 1 - rx
-
-        val (sx, sy) = when (rot) {
-          90 -> Pair(ry, srcH - 1 - rx)
-          180 -> Pair(srcW - 1 - rx, srcH - 1 - ry)
-          270 -> Pair(srcW - 1 - ry, rx)
-          else -> Pair(rx, ry)
-        }
-
-        val yIdx = sy * yPlane.rowStride + sx * yPlane.pixelStride
-        val uvX = sx / 2
-        val uvY = sy / 2
-        val uIdx = uvY * uPlane.rowStride + uvX * uPlane.pixelStride
-        val vIdx = uvY * vPlane.rowStride + uvX * vPlane.pixelStride
-
-        val y = (yBuf.get(yIdx).toInt() and 0xFF).toFloat()
-        val u = ((uBuf.get(uIdx).toInt() and 0xFF) - 128).toFloat()
-        val v = ((vBuf.get(vIdx).toInt() and 0xFF) - 128).toFloat()
-
-        val r = clamp(y + 1.402f * v) * INV_255
-        val g = clamp(y - 0.344136f * u - 0.714136f * v) * INV_255
-        val b = clamp(y + 1.772f * u) * INV_255
-
-        inputBuffer.putFloat(r)
-        inputBuffer.putFloat(g)
-        inputBuffer.putFloat(b)
-      }
+    for (px in pixels) {
+      inputBuffer.putFloat(((px shr 16) and 0xFF) * INV_255)
+      inputBuffer.putFloat(((px shr 8) and 0xFF) * INV_255)
+      inputBuffer.putFloat((px and 0xFF) * INV_255)
     }
-
     inputBuffer.rewind()
+
+    rawBitmap.recycle()
+    if (rotated !== rawBitmap) rotated.recycle()
+    if (scaled !== rotated) scaled.recycle()
   }
 
   /* =========================
@@ -521,10 +557,11 @@ class YoloInferenceModule(
     private const val MIN_CONFIDENCE = 0.25f
     private const val IOU_THRESHOLD = 0.45f
     private const val MAX_DETECTIONS = 10
-    private const val TARGET_MAX_FPS = 5
+    private const val TARGET_MAX_FPS = 15
     private const val MIN_INFERENCE_INTERVAL_MS = 1000L / TARGET_MAX_FPS
     private const val MAX_LOGGED_DETECTIONS = 5
     private const val INV_255 = 1f / 255f
+    private const val VERBOSE_LOGGING = false
 
     @Volatile private var moduleInstance: YoloInferenceModule? = null
     private val registered = AtomicBoolean(false)

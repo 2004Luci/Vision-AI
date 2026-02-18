@@ -1,15 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { NativeModules, StyleSheet, type LayoutChangeEvent, View } from 'react-native';
+import { DeviceEventEmitter, StyleSheet, type LayoutChangeEvent, View } from 'react-native';
 
 type Detection = {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
-};
-
-type YoloInferenceModule = {
-  getLatestDetections?: () => unknown;
 };
 
 type ViewSize = {
@@ -22,7 +18,6 @@ type DetectionOverlayProps = {
 };
 
 const MODEL_SIZE = 640;
-const NATIVE_PULL_INTERVAL_MS = 200;
 const MAX_RENDER_BOXES = 20;
 
 const toFiniteNumber = (value: unknown): number | null => {
@@ -72,44 +67,21 @@ const mapDetectionToBox = (detection: Detection, viewSize: ViewSize) => {
 function useLatestDetectionsLoop(enabled: boolean) {
   const latestDetectionsRef = useRef<Detection[]>([]);
   const detectionsVersionRef = useRef(0);
-  const lastNativePullAtRef = useRef(0);
 
   useEffect(() => {
     latestDetectionsRef.current = [];
-    lastNativePullAtRef.current = 0;
     detectionsVersionRef.current = 0;
-
     if (!enabled) return;
 
-    const module = NativeModules?.YoloInferenceModule as YoloInferenceModule | undefined;
-    if (typeof module?.getLatestDetections !== 'function') return;
+    const subscription = DeviceEventEmitter.addListener(
+      'onYoloDetections',
+      (data: { detections: Detection[] }) => {
+        latestDetectionsRef.current = normalizeDetections(data?.detections);
+        detectionsVersionRef.current += 1;
+      },
+    );
 
-    let rafId = 0;
-    let cancelled = false;
-
-    const loop = (timestamp: number) => {
-      if (cancelled) return;
-
-      if (timestamp - lastNativePullAtRef.current >= NATIVE_PULL_INTERVAL_MS) {
-        lastNativePullAtRef.current = timestamp;
-        try {
-          const payload = module.getLatestDetections?.();
-          latestDetectionsRef.current = normalizeDetections(payload);
-          detectionsVersionRef.current += 1;
-        } catch {
-          latestDetectionsRef.current = [];
-          detectionsVersionRef.current += 1;
-        }
-      }
-
-      rafId = requestAnimationFrame(loop);
-    };
-
-    rafId = requestAnimationFrame(loop);
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(rafId);
-    };
+    return () => subscription.remove();
   }, [enabled]);
 
   return { latestDetectionsRef, detectionsVersionRef };
