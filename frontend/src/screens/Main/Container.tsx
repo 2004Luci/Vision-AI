@@ -16,12 +16,12 @@ const darkTheme = {
   dark: true,
   colors: {
     ...DefaultTheme.colors,
-    primary: colors.accentYellow,
-    background: colors.screenBg,
-    card: colors.cardBg,
-    text: colors.white,
-    border: colors.border,
-    notification: colors.accentYellow,
+    primary: '#22C55E',
+    background: '#080B10',
+    card: '#0F1620',
+    text: '#F1F5F9',
+    border: '#1E2D3D',
+    notification: '#22C55E',
   },
 };
 
@@ -50,7 +50,7 @@ export function MainContainer() {
   if (loading) {
     return (
       <View className="flex-1 bg-screen items-center justify-center">
-        <ActivityIndicator size="large" color={colors.accentYellow} />
+        <ActivityIndicator size="large" color="#22C55E" />
       </View>
     );
   }

@@ -1,14 +1,15 @@
 import {
-  Text,
-  View,
+  Animated,
+  Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
-  useWindowDimensions,
+  View,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@/theme/colors';
 import { useBackHandler } from '@/navigators';
 import { useAuth } from '@/auth/AuthContext';
 import { navigationActions } from '@/store/actions/navigation';
@@ -20,40 +21,39 @@ const FEATURE_CARDS = [
     title: 'Describe Object',
     subtitle: 'Identify items around you',
     icon: 'camera',
-    highlighted: true,
+    accentColor: '#22C55E',
   },
   {
     id: 'scene',
     title: 'Scene Summary',
     subtitle: 'Get a full room overview',
     icon: 'eye',
-    highlighted: false,
+    accentColor: '#A855F7',
   },
   {
     id: 'read',
     title: 'Read Text',
     subtitle: 'Scan documents & signs',
     icon: 'document-text',
-    highlighted: false,
+    accentColor: '#38BDF8',
   },
   {
     id: 'navigation',
     title: 'Navigation',
     subtitle: 'Find your way safely',
     icon: 'locate',
-    highlighted: false,
+    accentColor: '#06B6D4',
   },
 ];
 
 const RECENT_ITEMS = [
-  { id: '1', title: 'Find Keys', icon: 'search' },
-  { id: '2', title: 'Read Menu', icon: 'book' },
+  { id: '1', title: 'Find Keys', icon: 'search', accentColor: '#06B6D4' },
+  { id: '2', title: 'Read Menu', icon: 'book', accentColor: '#38BDF8' },
 ];
 
 export function HomeScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const { user } = useAuth();
 
   const handlePressProfile = () => {
@@ -63,119 +63,86 @@ export function HomeScreen() {
 
   useBackHandler({
     showExitPrompt: true,
-  })
-
-  const cardGap = 12;
-  const recentCardWidth = (width - 32 - insets.left - insets.right - cardGap) / 2;
+  });
 
   return (
-    <View className="flex-1 bg-screen" style={{ paddingTop: insets.top }}>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: insets.bottom + 80,
-        }}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View className="flex-row justify-between items-center mb-6">
-          <View>
-            <Text className="text-white text-[28px] font-bold">
-              Hello, <Text className="text-accent">{displayName}</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <View style={styles.visionBadge}>
+              <Text style={styles.visionBadgeText}>VISION AI</Text>
+            </View>
+            <Text style={styles.greetingText}>
+              Hello, <Text style={styles.greetingName}>{displayName}</Text>
             </Text>
           </View>
-          <TouchableOpacity
-            className="w-11 h-11 rounded-full bg-accent items-center justify-center"
-            activeOpacity={0.8}
+          <Pressable
+            style={styles.profileButton}
             onPress={handlePressProfile}
           >
-            <Text className="text-black text-lg font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</Text>
-          </TouchableOpacity>
+            <Text style={styles.profileInitial}>{displayName[0]?.toUpperCase() ?? 'U'}</Text>
+          </Pressable>
         </View>
 
-        {/* System Status Card */}
-        <View className="bg-card rounded-2xl p-4 mb-3 flex-row justify-between items-center">
-          <View className="flex-1">
-            <Text className="text-grey text-xs mb-1">System Status</Text>
-            <View className="flex-row items-center gap-2">
-              <View className="w-2 h-2 rounded-full bg-success" />
-              <Text className="text-white text-lg font-semibold">
-                Online & Ready
-              </Text>
+        <Animated.View style={styles.statusCard}>
+          <View style={styles.statusAccentLine} />
+          <View style={styles.statusRow}>
+            <View style={styles.statusLeft}>
+              <Text style={styles.statusLabel}>SYSTEM STATUS</Text>
+              <View style={styles.statusOnlineRow}>
+                <View style={styles.statusDot} />
+                <Text style={styles.statusText}>Online & Ready</Text>
+              </View>
+            </View>
+            <View style={styles.statusPill}>
+              <Text style={styles.statusPillText}>ACTIVE</Text>
             </View>
           </View>
-          <View className="ml-3">
-            <Ionicons
-              name="cellular"
-              size={24}
-              color={colors.accentYellow}
-            />
-          </View>
-        </View>
+        </Animated.View>
 
-        {/* Feature Cards */}
+        <Text style={styles.sectionLabel}>FEATURES</Text>
+
         {FEATURE_CARDS.map((card) => (
           <TouchableOpacity
             key={card.id}
-            className={`flex-row items-center rounded-2xl p-4 mb-3 ${
-              card.highlighted ? 'bg-accent' : 'bg-card'
-            }`}
+            style={styles.featureCard}
             activeOpacity={0.8}
           >
-            <View
-              className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${
-                card.highlighted ? 'bg-white/50' : 'bg-card-light'
-              }`}
-            >
-              <Ionicons
-                name={card.icon as any}
-                size={24}
-                color={card.highlighted ? '#000000' : colors.white}
-              />
-            </View>
-            <View className="flex-1">
-              <Text
-                className={`text-lg font-bold mb-0.5 ${
-                  card.highlighted ? 'text-black' : 'text-white'
-                }`}
+            <View style={[styles.featureAccentLine, { backgroundColor: card.accentColor }]} />
+            <View style={styles.featureRow}>
+              <View
+                style={[styles.featureIconContainer, { borderColor: `${card.accentColor}40` }]}
               >
-                {card.title}
-              </Text>
-              <Text
-                className={`text-sm ${
-                  card.highlighted ? 'text-black/70' : 'text-grey'
-                }`}
-              >
-                {card.subtitle}
-              </Text>
+                <Ionicons name={card.icon as any} size={24} color={card.accentColor} />
+              </View>
+              <View style={styles.featureTextBlock}>
+                <Text style={styles.featureTitle}>{card.title}</Text>
+                <Text style={styles.featureSubtitle}>{card.subtitle}</Text>
+              </View>
+              <Text style={[styles.featureArrow, { color: card.accentColor }]}>→</Text>
             </View>
           </TouchableOpacity>
         ))}
 
-        {/* RECENT Section */}
-        <Text className="text-white text-sm font-bold uppercase mt-6 mb-3">
-          RECENT
-        </Text>
-        <View className="flex-row gap-3">
+        <Text style={styles.sectionLabel}>RECENT</Text>
+        <View style={styles.recentRow}>
           {RECENT_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.id}
-              className="bg-card rounded-2xl p-5 items-center min-h-[120px]"
-              style={{ width: recentCardWidth }}
+              style={styles.recentCard}
               activeOpacity={0.8}
             >
-              <View className="mb-3">
-                <Ionicons
-                  name={item.icon as any}
-                  size={28}
-                  color={colors.accentYellow}
-                />
-              </View>
-              <Text className="text-white text-sm font-bold text-center">
-                {item.title}
-              </Text>
+              <Ionicons
+                name={item.icon as any}
+                size={26}
+                color={item.accentColor}
+                style={styles.recentIcon}
+              />
+              <Text style={styles.recentTitle}>{item.title}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -183,3 +150,204 @@ export function HomeScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#080B10',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  visionBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#22C55E18',
+    borderWidth: 1,
+    borderColor: '#22C55E35',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 6,
+  },
+  visionBadgeText: {
+    color: '#22C55E',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  greetingText: {
+    color: '#F1F5F9',
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  greetingName: {
+    color: '#22C55E',
+  },
+  profileButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    backgroundColor: '#22C55E15',
+    borderWidth: 1,
+    borderColor: '#22C55E40',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileInitial: {
+    color: '#22C55E',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  statusCard: {
+    backgroundColor: '#0F1620',
+    borderWidth: 1,
+    borderColor: '#1E2D3D',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  statusAccentLine: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: '#22C55E',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusLeft: {
+    flex: 1,
+  },
+  statusLabel: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  statusOnlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#22C55E',
+    marginRight: 8,
+  },
+  statusText: {
+    color: '#F1F5F9',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  statusPill: {
+    backgroundColor: '#22C55E18',
+    borderWidth: 1,
+    borderColor: '#22C55E35',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusPillText: {
+    color: '#22C55E',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+  sectionLabel: {
+    color: '#475569',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  featureCard: {
+    backgroundColor: '#0F1620',
+    borderWidth: 1,
+    borderColor: '#1E2D3D',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  featureAccentLine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featureIconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: '#0A0F18',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  featureTextBlock: {
+    flex: 1,
+  },
+  featureTitle: {
+    color: '#F1F5F9',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  featureSubtitle: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  featureArrow: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  recentRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  recentCard: {
+    flex: 1,
+    backgroundColor: '#0F1620',
+    borderWidth: 1,
+    borderColor: '#1E2D3D',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    minHeight: 110,
+  },
+  recentIcon: {
+    marginBottom: 10,
+  },
+  recentTitle: {
+    color: '#F1F5F9',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+});

@@ -1,4 +1,5 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text } from 'react-native';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { ScreenNames } from '@/configs/navigation';
 import type { IHomeTabParamList } from '@/screens/screens.types';
@@ -7,7 +8,6 @@ import { ExploreScreen } from '@/screens/Explore';
 import { VoiceScreen } from '@/screens/Voice';
 import { AlertsScreen } from '@/screens/Alerts';
 import { SettingsStack } from '@/screens/Settings/SettingsStack';
-import { colors } from '@/theme/colors';
 
 const Tab = createBottomTabNavigator<IHomeTabParamList>();
 
@@ -16,17 +16,15 @@ export function Tabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accentYellow,
-        tabBarInactiveTintColor: colors.white,
         tabBarStyle: {
-          backgroundColor: colors.tabBarBg,
-          borderTopColor: colors.border,
+          backgroundColor: '#080B10',
+          borderTopColor: '#1E2D3D',
           borderTopWidth: 1,
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          textTransform: 'uppercase',
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 4,
         },
       }}
     >
@@ -35,12 +33,26 @@ export function Tabs() {
         component={HomeScreen}
         options={{
           title: 'HOME',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
-              size={24}
-              color={color}
+              size={22}
+              color={focused ? '#22C55E' : '#334155'}
             />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={{
+                fontSize: 9,
+                fontWeight: '700',
+                letterSpacing: 1.5,
+                color: focused ? '#22C55E' : '#334155',
+                textTransform: 'uppercase',
+                marginTop: -2,
+              }}
+            >
+              HOME
+            </Text>
           ),
         }}
       />
@@ -49,12 +61,26 @@ export function Tabs() {
         component={ExploreScreen}
         options={{
           title: 'EXPLORE',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'compass' : 'compass-outline'}
-              size={24}
-              color={color}
+              size={22}
+              color={focused ? '#22C55E' : '#334155'}
             />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={{
+                fontSize: 9,
+                fontWeight: '700',
+                letterSpacing: 1.5,
+                color: focused ? '#22C55E' : '#334155',
+                textTransform: 'uppercase',
+                marginTop: -2,
+              }}
+            >
+              EXPLORE
+            </Text>
           ),
         }}
       />
@@ -63,8 +89,26 @@ export function Tabs() {
         component={VoiceScreen}
         options={{
           title: 'VOICE',
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="mic-outline" size={24} color={color} />
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name={focused ? 'mic' : 'mic-outline'}
+              size={22}
+              color={focused ? '#6366F1' : '#334155'}
+            />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={{
+                fontSize: 9,
+                fontWeight: '700',
+                letterSpacing: 1.5,
+                color: focused ? '#6366F1' : '#334155',
+                textTransform: 'uppercase',
+                marginTop: -2,
+              }}
+            >
+              VOICE
+            </Text>
           ),
         }}
       />
@@ -73,12 +117,26 @@ export function Tabs() {
         component={AlertsScreen}
         options={{
           title: 'ALERTS',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'notifications' : 'notifications-outline'}
-              size={24}
-              color={color}
+              size={22}
+              color={focused ? '#F59E0B' : '#334155'}
             />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={{
+                fontSize: 9,
+                fontWeight: '700',
+                letterSpacing: 1.5,
+                color: focused ? '#F59E0B' : '#334155',
+                textTransform: 'uppercase',
+                marginTop: -2,
+              }}
+            >
+              ALERTS
+            </Text>
           ),
         }}
       />
@@ -87,12 +145,26 @@ export function Tabs() {
         component={SettingsStack}
         options={{
           title: 'SETTINGS',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'settings' : 'settings-outline'}
-              size={24}
-              color={color}
+              size={22}
+              color={focused ? '#14B8A6' : '#334155'}
             />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={{
+                fontSize: 9,
+                fontWeight: '700',
+                letterSpacing: 1.5,
+                color: focused ? '#14B8A6' : '#334155',
+                textTransform: 'uppercase',
+                marginTop: -2,
+              }}
+            >
+              SETTINGS
+            </Text>
           ),
         }}
       />
