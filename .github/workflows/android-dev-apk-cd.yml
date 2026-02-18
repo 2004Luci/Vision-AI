@@ -1,5 +1,5 @@
-# Android Dev APK build — runs only on push to main (merge or direct commit).
-# Does NOT run on PRs to main, to avoid exhausting GitHub Actions minutes.
+# Android Dev APK build
+
 name: Android Dev APK
 
 on:
