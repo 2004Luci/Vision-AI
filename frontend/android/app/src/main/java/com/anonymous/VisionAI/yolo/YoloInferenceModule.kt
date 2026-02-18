@@ -19,6 +19,7 @@ import com.mrousavy.camera.frameprocessors.Frame
 import com.mrousavy.camera.frameprocessors.FrameProcessorPlugin
 import com.mrousavy.camera.frameprocessors.FrameProcessorPluginRegistry
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
@@ -73,23 +74,39 @@ class YoloInferenceModule(
 
         val modelBuffer = loadModelFile(MODEL_FILE_NAME)
 
-        try {
-          // Attempt to use GPU delegate
-          val gpu = GpuDelegate()
-          gpuDelegate = gpu
-          val opts = Interpreter.Options().apply {
-            addDelegate(gpu)
-            setNumThreads(2)
+        val compatList = CompatibilityList()
+        val loaded = if (compatList.isDelegateSupportedOnThisDevice) {
+          try {
+            val delegateOptions = compatList.bestOptionsForThisDevice
+            val gpu = GpuDelegate(delegateOptions)
+            gpuDelegate = gpu
+            val opts = Interpreter.Options().apply {
+              addDelegate(gpu)
+              setNumThreads(2)
+            }
+            Log.d(TAG, "Using GPU delegate")
+            Interpreter(modelBuffer, opts)
+          } catch (e: Throwable) {
+            Log.w(TAG, "GPU delegate failed despite compatibility check: ${e.message}")
+            gpuDelegate = null
+            buildCpuInterpreter(modelBuffer)
           }
-          interpreter = Interpreter(modelBuffer, opts)
-          Log.d(TAG, "Using GPU delegate")
-        } catch (e: Throwable) {
-          // GPU failed — fallback to CPU
-          Log.w(TAG, "GPU delegate failed, falling back to CPU: ${e.message}")
-          gpuDelegate = null
-          val opts = Interpreter.Options().apply { setNumThreads(4) }
-          interpreter = Interpreter(modelBuffer, opts)
+        } else {
+          Log.w(TAG, "GPU delegate not supported on this device, trying NNAPI")
+          try {
+            if (android.os.Build.VERSION.SDK_INT < 27) throw Exception("NNAPI requires API 27+")
+            val opts = Interpreter.Options().apply {
+              setUseNNAPI(true)
+              setNumThreads(4)
+            }
+            Log.d(TAG, "Using NNAPI delegate")
+            Interpreter(modelBuffer, opts)
+          } catch (e: Throwable) {
+            Log.w(TAG, "NNAPI failed: ${e.message}, falling back to CPU")
+            buildCpuInterpreter(modelBuffer)
+          }
         }
+        interpreter = loaded
 
         interpreter?.let { logTensorShapes(it) }
       }
@@ -498,6 +515,12 @@ class YoloInferenceModule(
      Helpers
      ========================= */
 
+  private fun buildCpuInterpreter(modelBuffer: MappedByteBuffer): Interpreter {
+    val opts = Interpreter.Options().apply { setNumThreads(4) }
+    Log.d(TAG, "Using CPU (4 threads)")
+    return Interpreter(modelBuffer, opts)
+  }
+
   private fun loadModelFile(name: String): MappedByteBuffer =
     reactApplicationContext.assets.openFd(name).use {
       FileInputStream(it.fileDescriptor).channel.map(
@@ -548,16 +571,16 @@ class YoloInferenceModule(
     private const val TAG = "YoloInferenceModule"
     private const val MODEL_FILE_NAME = "yolov8n.tflite"
 
-    private const val MODEL_INPUT_WIDTH = 640
-    private const val MODEL_INPUT_HEIGHT = 640
+    private const val MODEL_INPUT_WIDTH = 320
+    private const val MODEL_INPUT_HEIGHT = 320
     private const val MODEL_INPUT_CHANNELS = 3
     private const val MODEL_CLASS_OFFSET = 4
     private const val MODEL_OUTPUT_CHANNELS = 84
-    private const val MODEL_OUTPUT_BOXES = 8400
+    private const val MODEL_OUTPUT_BOXES = 2100
     private const val MIN_CONFIDENCE = 0.25f
     private const val IOU_THRESHOLD = 0.45f
     private const val MAX_DETECTIONS = 10
-    private const val TARGET_MAX_FPS = 15
+    private const val TARGET_MAX_FPS = 30
     private const val MIN_INFERENCE_INTERVAL_MS = 1000L / TARGET_MAX_FPS
     private const val MAX_LOGGED_DETECTIONS = 5
     private const val INV_255 = 1f / 255f

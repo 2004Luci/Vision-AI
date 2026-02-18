@@ -17,7 +17,7 @@ type DetectionOverlayProps = {
   enabled?: boolean;
 };
 
-const MODEL_SIZE = 640;
+const MODEL_SIZE = 320;
 const MAX_RENDER_BOXES = 20;
 
 const toFiniteNumber = (value: unknown): number | null => {
