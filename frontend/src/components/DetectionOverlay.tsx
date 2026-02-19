@@ -134,6 +134,7 @@ export function DetectionOverlay({ enabled = true }: DetectionOverlayProps) {
   useEffect(() => {
     if (!enabled) {
       hideAllBoxes();
+      setLabels([]);
       lastDrawnVersionRef.current = -1;
       return;
     }
@@ -207,6 +208,7 @@ export function DetectionOverlay({ enabled = true }: DetectionOverlayProps) {
       cancelled = true;
       cancelAnimationFrame(rafId);
       hideAllBoxes();
+      setLabels([]);
       lastDrawnVersionRef.current = -1;
     };
   }, [detectionsVersionRef, enabled, hideAllBoxes, latestDetectionsRef]);
