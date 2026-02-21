@@ -1,7 +1,4 @@
-/**
- * Design tokens: Single source of truth for theme colors.
- * Used by tailwind.config.js and colors.ts
- */
+/** Build-time tokens for Tailwind. Runtime themes from theme/tokens.ts via ThemeContext. */
 module.exports = {
   accentYellow: '#FFD54F',
   screenBg: '#0f1117',
