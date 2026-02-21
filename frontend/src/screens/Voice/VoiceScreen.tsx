@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@react-native-vector-icons/ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/theme';
+import { useEffect, useRef, useState } from "react";
+import { Animated, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/theme";
 
 const BAR_COUNT = 8;
 const BAR_MIN = 0.15;
 const BAR_MAX = 1;
 
 type SoundWaveBarsProps = { isActive: boolean; barColor?: string };
-function SoundWaveBars({ isActive, barColor = '#6366F1' }: SoundWaveBarsProps) {
+function SoundWaveBars({ isActive, barColor = "#6366F1" }: SoundWaveBarsProps) {
   const bars = useRef(
     Array.from({ length: BAR_COUNT }, () => new Animated.Value(BAR_MIN)),
   ).current;
@@ -49,10 +49,9 @@ function SoundWaveBars({ isActive, barColor = '#6366F1' }: SoundWaveBarsProps) {
       ),
     );
 
-    const loop = Animated.loop(
-      Animated.sequence([waveForward, waveBack]),
-      { iterations: -1 },
-    );
+    const loop = Animated.loop(Animated.sequence([waveForward, waveBack]), {
+      iterations: -1,
+    });
     loop.start();
     return () => loop.stop();
   }, [isActive]);
@@ -69,13 +68,15 @@ function SoundWaveBars({ isActive, barColor = '#6366F1' }: SoundWaveBarsProps) {
           outputRange: [11, 0],
         });
         return (
-          <View
-            key={`bar-${i}`}
-            className="w-1 h-6 items-center justify-end"
-          >
+          <View key={`bar-${i}`} className="w-1 h-6 items-center justify-end">
             <Animated.View
               className="w-1 h-6 rounded-sm"
-              style={[{ backgroundColor: barColor, transform: [{ scaleY }, { translateY }] }]}
+              style={[
+                {
+                  backgroundColor: barColor,
+                  transform: [{ scaleY }, { translateY }],
+                },
+              ]}
             />
           </View>
         );
@@ -95,15 +96,7 @@ const VoiceScreen = () => {
       className="flex-1 items-center"
       style={{ paddingTop: insets.top, backgroundColor: theme.screenBg }}
     >
-      <View className="items-center">
-        <View
-          className="self-center border rounded-md px-3 py-1 mt-6 mb-2"
-          style={{ borderColor: `${accent}35`, backgroundColor: `${accent}18` }}
-        >
-          <Text className="text-[10px] font-bold tracking-widest" style={{ color: accent }}>
-            VOICE MODE
-          </Text>
-        </View>
+      <View className="items-center mt-16">
         <Text className="text-[28px] font-extrabold tracking-tight mb-2" style={{ color: theme.white }}>
           Voice Mode
         </Text>
@@ -128,20 +121,20 @@ const VoiceScreen = () => {
           className="text-[13px] font-bold tracking-widest mb-8"
           style={{ color: isListening ? accent : theme.white }}
         >
-          {isListening ? 'LISTENING...' : 'TAP TO START'}
+          {isListening ? "LISTENING..." : "TAP TO START"}
         </Text>
 
         <TouchableOpacity
           className="rounded-[14px] py-4 px-7 min-w-[260px] flex-row items-center justify-center gap-2.5 border"
           style={{
             backgroundColor: isListening ? accent : theme.cardBg,
-            borderColor: isListening ? 'transparent' : `${accent}40`,
+            borderColor: isListening ? "transparent" : `${accent}40`,
           }}
           activeOpacity={0.8}
           onPress={() => setIsListening((p) => !p)}
         >
           <Ionicons
-            name={isListening ? 'stop-circle' : 'mic'}
+            name={isListening ? "stop-circle" : "mic"}
             size={24}
             color={isListening ? theme.white : accent}
           />
@@ -149,7 +142,7 @@ const VoiceScreen = () => {
             className="text-[15px] font-bold"
             style={{ color: isListening ? theme.white : accent }}
           >
-            {isListening ? 'Stop Listening' : 'Start Listening'}
+            {isListening ? "Stop Listening" : "Start Listening"}
           </Text>
         </TouchableOpacity>
       </View>
