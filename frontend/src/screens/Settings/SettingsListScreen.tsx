@@ -1,32 +1,27 @@
-import {
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { Ionicons } from '@react-native-vector-icons/ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useTheme } from '@/theme';
-import { SETTINGS_ITEMS } from './config';
-import type { ISettingsStackParamList } from '@/screens/screens.types';
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTheme } from "@/theme";
+import { SETTINGS_ITEMS } from "./config";
+import type { ISettingsStackParamList } from "@/screens/screens.types";
 
 type NavProp = NativeStackNavigationProp<ISettingsStackParamList>;
 
 const ITEM_ACCENT_KEY: Record<
   string,
-  | 'settingsProfile'
-  | 'settingsVoice'
-  | 'settingsVision'
-  | 'settingsDevices'
-  | 'settingsAccessibility'
+  | "settingsProfile"
+  | "settingsVoice"
+  | "settingsVision"
+  | "settingsDevices"
+  | "settingsAccessibility"
 > = {
-  profile: 'settingsProfile',
-  voice: 'settingsVoice',
-  vision: 'settingsVision',
-  devices: 'settingsDevices',
-  accessibility: 'settingsAccessibility',
+  profile: "settingsProfile",
+  voice: "settingsVoice",
+  vision: "settingsVision",
+  devices: "settingsDevices",
+  accessibility: "settingsAccessibility",
 };
 
 const SettingsListScreen = () => {
@@ -40,30 +35,13 @@ const SettingsListScreen = () => {
       style={{ paddingTop: insets.top, backgroundColor: theme.screenBg }}
     >
       <View className="px-4 pt-6 pb-4">
-        <View
-          className="self-start border rounded-md px-2.5 py-1 mb-2"
-          style={{
-            backgroundColor: `${theme.tabSettings}18`,
-            borderColor: `${theme.tabSettings}35`,
-          }}
-        >
-          <Text
-            className="text-[10px] font-bold tracking-widest"
-            style={{ color: theme.tabSettings }}
-          >
-            SETTINGS
-          </Text>
-        </View>
         <Text
           className="text-3xl font-extrabold tracking-tight"
           style={{ color: theme.white }}
         >
           Preferences
         </Text>
-        <Text
-          className="text-[13px] mt-1"
-          style={{ color: theme.grey }}
-        >
+        <Text className="text-[13px] mt-1" style={{ color: theme.grey }}>
           Configure your experience
         </Text>
       </View>
