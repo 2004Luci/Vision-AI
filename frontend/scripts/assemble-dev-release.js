@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const { execSync } = require('child_process');
 
 const frontendRoot = path.join(__dirname, '..');
@@ -11,6 +12,15 @@ const architectures = 'arm64-v8a';
 
 execSync('node scripts/generate-google-services.js', { cwd: frontendRoot, stdio: 'inherit' });
 console.log('Building dev release APK (assembleDevRelease) for real devices only...\n');
+
+// On Linux/macOS, ensure gradlew is executable (CI checkout does not preserve execute bit)
+if (!isWin) {
+  const gradlewPath = path.join(androidDir, 'gradlew');
+  try {
+    fs.chmodSync(gradlewPath, 0o755);
+  } catch (_) {}
+}
+
 execSync(`${gradlew} assembleDevRelease -PreactNativeArchitectures=${architectures}`, {
   cwd: androidDir,
   stdio: 'inherit',
