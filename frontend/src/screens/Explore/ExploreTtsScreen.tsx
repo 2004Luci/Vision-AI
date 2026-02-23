@@ -43,18 +43,18 @@ const ExploreTtsScreen = () => {
       }
     };
 
-    Tts.addEventListener("tts-start", handleStart);
-    Tts.addEventListener("tts-finish", handleFinish);
-    Tts.addEventListener("tts-cancel", handleCancel);
-    Tts.addEventListener("tts-error", handleError);
+    const startSubscription = Tts.addListener("tts-start", handleStart);
+    const finishSubscription = Tts.addListener("tts-finish", handleFinish);
+    const cancelSubscription = Tts.addListener("tts-cancel", handleCancel);
+    const errorSubscription = Tts.addListener("tts-error", handleError);
     void initializeTts();
 
     return () => {
       void Tts.stop();
-      Tts.removeEventListener("tts-start", handleStart);
-      Tts.removeEventListener("tts-finish", handleFinish);
-      Tts.removeEventListener("tts-cancel", handleCancel);
-      Tts.removeEventListener("tts-error", handleError);
+      startSubscription.remove();
+      finishSubscription.remove();
+      cancelSubscription.remove();
+      errorSubscription.remove();
     };
   }, []);
 

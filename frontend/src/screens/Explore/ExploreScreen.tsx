@@ -36,17 +36,17 @@ const FEATURES: Feature[] = [
   },
   {
     id: "ocr",
-    title: "Photo to Text",
-    subtitle: "Optical Character Recognition",
+    title: "QR & Barcode",
+    subtitle: "Instant Code Scanner",
     description:
-      "Extract and digitize text from images, documents, signs, and handwriting with high accuracy.",
-    icon: "◈",
-    status: "coming_soon",
+      "Scan QR codes and barcodes instantly",
+    icon: "▦",
+    status: "active",
     accentColor: "#6366F1",
     stats: [
-      { label: "Languages", value: "50+" },
-      { label: "Mode", value: "Offline" },
-      { label: "Format", value: "PDF/IMG" },
+      { label: "Formats", value: "8+" },
+      { label: "Camera", value: "Rear" },
+      { label: "Mode", value: "Live" },
     ],
   },
   {
@@ -235,7 +235,7 @@ function FeatureCard({
 
 const FEATURE_TO_SCREEN: Record<FeatureId, keyof typeof ScreenNames> = {
   objectDetection: ScreenNames.ExploreObjectDetection,
-  ocr: ScreenNames.ExploreOcr,
+  ocr: ScreenNames.ExploreQrScanner,
   tts: ScreenNames.ExploreTts,
 };
 
