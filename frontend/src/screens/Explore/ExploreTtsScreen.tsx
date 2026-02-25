@@ -12,6 +12,9 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Tts from "react-native-tts";
 import { useTheme } from "@/theme";
+import { logEvent, warn, error } from "@/utils/logger";
+
+const LOG_NAME = "ExploreTts";
 
 type ValueAdjustButtonProps = {
   icon: string;
@@ -47,10 +50,22 @@ const ExploreTtsScreen = () => {
   const [isReady, setIsReady] = useState<boolean>(false);
 
   useEffect(() => {
-    const handleStart = () => setIsSpeaking(true);
-    const handleFinish = () => setIsSpeaking(false);
-    const handleCancel = () => setIsSpeaking(false);
-    const handleError = () => setIsSpeaking(false);
+    const handleStart = () => {
+      setIsSpeaking(true);
+      logEvent(`${LOG_NAME}_tts_start`, {});
+    };
+    const handleFinish = () => {
+      setIsSpeaking(false);
+      logEvent(`${LOG_NAME}_tts_finish`, {});
+    };
+    const handleCancel = () => {
+      setIsSpeaking(false);
+      logEvent(`${LOG_NAME}_tts_cancel`, {});
+    };
+    const handleError = (err: { message?: string; code?: string }) => {
+      setIsSpeaking(false);
+      error(LOG_NAME, "TTS error", err?.message ?? err?.code ?? err);
+    };
 
     const initializeTts = async () => {
       try {
@@ -59,8 +74,10 @@ const ExploreTtsScreen = () => {
         await Tts.setDefaultRate(speechRate);
         await Tts.setDefaultPitch(pitch);
         setIsReady(true);
-      } catch {
+        logEvent(`${LOG_NAME}_ready`, { language: "en-US" });
+      } catch (e) {
         setIsReady(false);
+        warn(LOG_NAME, "TTS initialization failed", e);
       }
     };
 
@@ -105,7 +122,15 @@ const ExploreTtsScreen = () => {
 
   const handleSpeak = () => {
     const nextText = text.trim();
-    if (!nextText || !isReady) return;
+    if (!nextText || !isReady) {
+      if (!isReady) warn(LOG_NAME, "Speak pressed while TTS not ready");
+      return;
+    }
+    logEvent(`${LOG_NAME}_speak`, {
+      length: nextText.length,
+      rate: speechRate,
+      pitch,
+    });
     setIsSpeaking(true);
     void Tts.stop()
       .catch(() => undefined)
@@ -115,6 +140,7 @@ const ExploreTtsScreen = () => {
   };
 
   const handleStop = () => {
+    logEvent(`${LOG_NAME}_stop`, {});
     setIsSpeaking(false);
     void Tts.stop();
   };
