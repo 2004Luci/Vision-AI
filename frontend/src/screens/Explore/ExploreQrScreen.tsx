@@ -24,8 +24,10 @@ import {
 } from "react-native-vision-camera";
 import type { CameraPermissionStatus, Code, CodeType } from "react-native-vision-camera";
 import { useTheme } from "@/theme";
+import { error } from "@/utils/logger";
+import { SCAN_BOX_SIZE } from "./constants";
+import { getCodeTypeLabel } from "./helpers";
 
-const SCAN_BOX_SIZE = 240;
 const CORNER_SIZE = 34;
 const CORNER_THICKNESS = 4;
 
@@ -40,27 +42,29 @@ const SUPPORTED_CODE_TYPES: CodeType[] = [
   "pdf-417",
 ];
 
-const CODE_TYPE_LABELS: Record<string, string> = {
-  qr: "QR Code",
-  "ean-13": "EAN-13",
-  "ean-8": "EAN-8",
-  "code-128": "Code 128",
-  "code-39": "Code 39",
-  "upc-e": "UPC-E",
-  "data-matrix": "Data Matrix",
-  "pdf-417": "PDF417",
-  unknown: "Unknown",
-};
-
 type ScannedResult = {
   value: string;
   type: Code["type"];
 };
 
-const getCodeTypeLabel = (type: Code["type"]): string => {
-  const mapped = CODE_TYPE_LABELS[type];
-  if (mapped) return mapped;
-  return String(type).toUpperCase();
+type CornerPosition = "topLeft" | "topRight" | "bottomLeft" | "bottomRight";
+
+type CornerBracketProps = {
+  position: CornerPosition;
+  color: string;
+};
+
+const CornerBracket = ({ position, color }: CornerBracketProps) => {
+  const positionStyle =
+    position === "topLeft"
+      ? styles.topLeft
+      : position === "topRight"
+      ? styles.topRight
+      : position === "bottomLeft"
+      ? styles.bottomLeft
+      : styles.bottomRight;
+
+  return <View style={[styles.corner, positionStyle, { borderColor: color }]} />;
 };
 
 const getOpenableUrl = (rawValue: string): string | null => {
@@ -89,7 +93,7 @@ const ExploreQrScreen = () => {
 
   const [permissionStatus, setPermissionStatus] =
     useState<CameraPermissionStatus | null>(null);
-  const [scanned, setScanned] = useState(false);
+  const [scanned, setScanned] = useState<boolean>(false);
   const [result, setResult] = useState<ScannedResult | null>(null);
 
   const scannedRef = useRef(false);
@@ -178,8 +182,8 @@ const ExploreQrScreen = () => {
     } else {
       try {
         await Linking.openSettings();
-      } catch {
-        // Keep flow silent on settings open failure.
+      } catch (err) {
+        error("ExploreQrScreen:OpenSettingsFailed", { error: String(err) });
       }
     }
     refreshPermissionStatus();
@@ -251,42 +255,10 @@ const ExploreQrScreen = () => {
                 opacity: cornerOpacity,
               }}
             >
-              <View
-                style={[
-                  styles.corner,
-                  styles.topLeft,
-                  {
-                    borderColor: cornerColor,
-                  },
-                ]}
-              />
-              <View
-                style={[
-                  styles.corner,
-                  styles.topRight,
-                  {
-                    borderColor: cornerColor,
-                  },
-                ]}
-              />
-              <View
-                style={[
-                  styles.corner,
-                  styles.bottomLeft,
-                  {
-                    borderColor: cornerColor,
-                  },
-                ]}
-              />
-              <View
-                style={[
-                  styles.corner,
-                  styles.bottomRight,
-                  {
-                    borderColor: cornerColor,
-                  },
-                ]}
-              />
+              <CornerBracket position="topLeft" color={cornerColor} />
+              <CornerBracket position="topRight" color={cornerColor} />
+              <CornerBracket position="bottomLeft" color={cornerColor} />
+              <CornerBracket position="bottomRight" color={cornerColor} />
               {!scanned && (
                 <Animated.View
                   style={[

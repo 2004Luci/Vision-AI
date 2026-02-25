@@ -13,17 +13,38 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Tts from "react-native-tts";
 import { useTheme } from "@/theme";
 
+type ValueAdjustButtonProps = {
+  icon: string;
+  onPress: () => void;
+};
+
+const ValueAdjustButton = ({ icon, onPress }: ValueAdjustButtonProps) => {
+  const { theme } = useTheme();
+
+  return (
+    <Pressable
+      className="w-12 py-2 rounded-lg border items-center justify-center"
+      style={{ borderColor: theme.border, backgroundColor: theme.screenBg }}
+      onPress={onPress}
+    >
+      <Text className="text-base font-bold" style={{ color: theme.white }}>
+        {icon}
+      </Text>
+    </Pressable>
+  );
+};
+
 const ExploreTtsScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const [text, setText] = useState(
+  const [text, setText] = useState<string>(
     "Welcome to Vision AI. Type your message and press Speak.",
   );
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speechRate, setSpeechRate] = useState(0.5);
-  const [pitch, setPitch] = useState(1.0);
-  const [isReady, setIsReady] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [speechRate, setSpeechRate] = useState<number>(0.5);
+  const [pitch, setPitch] = useState<number>(1.0);
+  const [isReady, setIsReady] = useState<boolean>(false);
 
   useEffect(() => {
     const handleStart = () => setIsSpeaking(true);
@@ -201,15 +222,7 @@ const ExploreTtsScreen = () => {
               </Text>
             </View>
             <View className="flex-row gap-2">
-              <Pressable
-                className="w-12 py-2 rounded-lg border items-center justify-center"
-                style={{ borderColor: theme.border, backgroundColor: theme.screenBg }}
-                onPress={() => adjustSpeechRate(-0.1)}
-              >
-                <Text className="text-base font-bold" style={{ color: theme.white }}>
-                  -
-                </Text>
-              </Pressable>
+              <ValueAdjustButton icon="-" onPress={() => adjustSpeechRate(-0.1)} />
               <View
                 className="flex-1 rounded-lg border items-center justify-center"
                 style={{ borderColor: theme.border, backgroundColor: theme.screenBg }}
@@ -218,15 +231,7 @@ const ExploreTtsScreen = () => {
                   0.10 to 1.00
                 </Text>
               </View>
-              <Pressable
-                className="w-12 py-2 rounded-lg border items-center justify-center"
-                style={{ borderColor: theme.border, backgroundColor: theme.screenBg }}
-                onPress={() => adjustSpeechRate(0.1)}
-              >
-                <Text className="text-base font-bold" style={{ color: theme.white }}>
-                  +
-                </Text>
-              </Pressable>
+              <ValueAdjustButton icon="+" onPress={() => adjustSpeechRate(0.1)} />
             </View>
           </View>
 
@@ -240,15 +245,7 @@ const ExploreTtsScreen = () => {
               </Text>
             </View>
             <View className="flex-row gap-2">
-              <Pressable
-                className="w-12 py-2 rounded-lg border items-center justify-center"
-                style={{ borderColor: theme.border, backgroundColor: theme.screenBg }}
-                onPress={() => adjustPitch(-0.1)}
-              >
-                <Text className="text-base font-bold" style={{ color: theme.white }}>
-                  -
-                </Text>
-              </Pressable>
+              <ValueAdjustButton icon="-" onPress={() => adjustPitch(-0.1)} />
               <View
                 className="flex-1 rounded-lg border items-center justify-center"
                 style={{ borderColor: theme.border, backgroundColor: theme.screenBg }}
@@ -257,15 +254,7 @@ const ExploreTtsScreen = () => {
                   0.50 to 2.00
                 </Text>
               </View>
-              <Pressable
-                className="w-12 py-2 rounded-lg border items-center justify-center"
-                style={{ borderColor: theme.border, backgroundColor: theme.screenBg }}
-                onPress={() => adjustPitch(0.1)}
-              >
-                <Text className="text-base font-bold" style={{ color: theme.white }}>
-                  +
-                </Text>
-              </Pressable>
+              <ValueAdjustButton icon="+" onPress={() => adjustPitch(0.1)} />
             </View>
           </View>
         </View>
