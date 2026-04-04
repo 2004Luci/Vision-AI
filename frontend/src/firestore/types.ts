@@ -3,9 +3,31 @@
  * Stored at: users/{uid}
  */
 
+export type GenderOption =
+  | 'female'
+  | 'male'
+  | 'non_binary'
+  | 'prefer_not_to_say';
+
+export const GENDER_OPTIONS: { value: GenderOption; label: string }[] = [
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
+  { value: 'non_binary', label: 'Non-binary' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
+
+export function labelForGender(value: GenderOption | undefined | null): string {
+  if (value == null) return 'Not set';
+  const row = GENDER_OPTIONS.find(o => o.value === value);
+  return row?.label ?? 'Not set';
+}
+
 export interface UserProfile {
   displayName?: string;
   photoURL?: string;
+  gender?: GenderOption;
+  /** Whole years; optional */
+  age?: number;
   updatedAt: FirebaseTimestamp;
 }
 

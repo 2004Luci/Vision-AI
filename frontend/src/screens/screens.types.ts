@@ -40,6 +40,7 @@ export type IHomeTabParamList = {
 export type ISettingsStackParamList = {
   [ScreenNames.SettingsList]: undefined;
   [ScreenNames.Profile]: undefined;
+  [ScreenNames.PersonalDetails]: undefined;
   [ScreenNames.VoiceAndAudio]: undefined;
   [ScreenNames.VisionSettings]: undefined;
   [ScreenNames.ConnectedDevices]: undefined;
@@ -85,6 +86,10 @@ export type ISettingsListScreenProps = NativeStackScreenProps<
 export type IProfileScreenProps = NativeStackScreenProps<
   ISettingsStackParamList,
   ScreenNames.Profile
+>;
+export type IPersonalDetailsScreenProps = NativeStackScreenProps<
+  ISettingsStackParamList,
+  ScreenNames.PersonalDetails
 >;
 export type IVoiceAndAudioScreenProps = NativeStackScreenProps<
   ISettingsStackParamList,

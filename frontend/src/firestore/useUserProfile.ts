@@ -5,6 +5,7 @@ import {
   subscribeToUserDocument,
   updateProfile,
   updateSettings,
+  clearProfileAge,
 } from './userProfileService';
 import type {
   UserDocument,
@@ -60,6 +61,11 @@ export function useUserProfile() {
     [user?.uid],
   );
 
+  const removeProfileAge = useCallback(async () => {
+    if (!user?.uid) return;
+    await clearProfileAge(user.uid);
+  }, [user?.uid]);
+
   const updateUserSettings = useCallback(
     async (settings: Partial<UserSettings>) => {
       if (!user?.uid) return;
@@ -77,6 +83,7 @@ export function useUserProfile() {
     loading,
     error,
     updateProfile: updateProfileFields,
+    removeProfileAge,
     updateSettings: updateUserSettings,
   };
 }

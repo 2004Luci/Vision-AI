@@ -72,6 +72,14 @@ export async function updateProfile(uid: string, profile: Partial<UserProfile>):
   );
 }
 
+/** Removes `profile.age` from the user document (e.g. user cleared the field). */
+export async function clearProfileAge(uid: string): Promise<void> {
+  await firestore().collection(USERS_COLLECTION).doc(uid).update({
+    'profile.age': firestore.FieldValue.delete(),
+    'profile.updatedAt': firestore.Timestamp.now(),
+  });
+}
+
 export async function updateSettings(uid: string, settings: Partial<UserSettings>): Promise<void> {
   const ref = firestore().collection(USERS_COLLECTION).doc(uid);
   const existing = (await ref.get()).data() as UserDocument | undefined;
