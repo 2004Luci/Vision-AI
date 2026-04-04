@@ -31,6 +31,17 @@ const content = `## This file must *NOT* be checked into Version Control Systems
 sdk.dir=${sdkDir.replace(/\\/g, '\\\\')}
 `;
 
+if (hasReleaseKeystore) {
+  const absPath = path.resolve(releaseKeystorePath).replace(/\\/g, '/');
+  content += `
+# Release signing (from generate-release-keystore.js)
+release.keystore.file=${absPath}
+release.keystore.password=${process.env.RELEASE_KEYSTORE_PASSWORD || 'visionai-release'}
+release.keystore.alias=visionai-release
+release.keystore.keyPassword=${process.env.RELEASE_KEY_PASSWORD || process.env.RELEASE_KEYSTORE_PASSWORD || 'visionai-release'}
+`;
+}
+
 const dir = path.dirname(localPropsPath);
 if (!fs.existsSync(dir)) {
   console.warn('[setup-local-properties] android/ folder not found, skipping.');
