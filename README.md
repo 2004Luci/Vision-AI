@@ -130,5 +130,3 @@ See **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** for:
 Contributions are welcome. Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for branch and PR workflow, Git hooks, code style (Prettier / TypeScript), detection and model change guidelines, and the minimal detection test checklist.
 
 This project is maintained for educational and research purposes.
-
-t
