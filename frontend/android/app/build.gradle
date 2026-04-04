@@ -158,12 +158,13 @@ android {
         release {
             def keystoreFile = findProperty('release.keystore.file')
             def keystorePass = findProperty('release.keystore.password')
-            def keyAlias = findProperty('release.keystore.alias')
+            // Not named `keyAlias` — that shadows SigningConfig DSL and breaks `keyAlias '…'` when the var is null.
+            def releaseKeyAlias = findProperty('release.keystore.alias')
             def keyPass = findProperty('release.keystore.keyPassword')
-            if (keystoreFile && file(keystoreFile).exists() && keystorePass && keyAlias && keyPass) {
+            if (keystoreFile && file(keystoreFile).exists() && keystorePass && releaseKeyAlias && keyPass) {
                 storeFile file(keystoreFile)
                 storePassword keystorePass
-                keyAlias keyAlias
+                keyAlias releaseKeyAlias
                 keyPassword keyPass
             } else {
                 storeFile file('debug.keystore')
