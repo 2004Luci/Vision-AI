@@ -55,7 +55,7 @@ export const EmergencyContactsEditor = ({
               style={{ color: theme.muted }}>
               Contact {index + 1}
             </Text>
-            {contacts.length > 1 ? (
+            {contacts.length > 1 && (
               <TouchableOpacity
                 onPress={() => onRemove(index)}
                 disabled={inputLocked}
@@ -67,7 +67,7 @@ export const EmergencyContactsEditor = ({
                   color={theme.warning}
                 />
               </TouchableOpacity>
-            ) : null}
+            )}
           </View>
           <ProfileTextField
             theme={theme}
@@ -102,7 +102,7 @@ export const EmergencyContactsEditor = ({
           />
         </View>
       ))}
-      {canAdd ? (
+      {canAdd && (
         <TouchableOpacity
           className="flex-row items-center justify-center py-3 rounded-xl border"
           style={{
@@ -119,10 +119,7 @@ export const EmergencyContactsEditor = ({
             Add another contact
           </Text>
         </TouchableOpacity>
-      ) : null}
-      <Text className="text-xs" style={{ color: theme.muted }}>
-        Up to {MAX_EMERGENCY_CONTACTS} contacts. Saves when you leave a field.
-      </Text>
+      )}
     </View>
   );
 };
