@@ -91,7 +91,7 @@ const OverlayBox = memo(
         onPress={onPress}
         disabled={!isPressable}
         pointerEvents={isPressable ? 'auto' : 'none'}>
-        {showLabels ? (
+        {showLabels && (
           <View
             className="absolute left-0 -top-6 max-w-[220px] rounded px-1.5 py-0.5"
             style={labelContainerStyle}>
@@ -101,7 +101,7 @@ const OverlayBox = memo(
               {labelText}
             </Text>
           </View>
-        ) : null}
+        )}
       </Pressable>
     );
   },
