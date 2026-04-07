@@ -40,6 +40,17 @@ const PrivacyAndSecurityScreen = () => {
     }
   }, []);
 
+  const openAppSettings = useCallback(async () => {
+    try {
+      await Linking.openSettings();
+    } catch {
+      showToast.error(
+        "Couldn't open Settings",
+        'Open Settings manually from your device.',
+      );
+    }
+  }, []);
+
   const handleDeleteData = useCallback(() => {
     if (!user?.uid) {
       showToast.info('Sign in required', 'Please sign in to manage your data.');
@@ -265,24 +276,24 @@ const PrivacyAndSecurityScreen = () => {
         </Card>
 
         <SectionTitle>Controls</SectionTitle>
-        <Card title="Manage data" subtitle="More options will be added soon">
+        <Card
+          title="Manage data"
+          subtitle="Control permissions and remove saved app data">
           <Row
-            icon="trash-outline"
-            title="Delete my data"
-            subtitle="Removes your saved profile & preferences"
-            onPress={handleDeleteData}
+            icon="settings-outline"
+            title="Open device settings"
+            subtitle="Manage permissions for camera and microphone"
+            onPress={() => void openAppSettings()}
           />
           <View
             className="h-px my-2"
             style={{ backgroundColor: theme.border }}
           />
           <Row
-            icon="cloud-offline-outline"
-            title="Disable sync"
-            subtitle="Not available in this build"
-            onPress={() =>
-              showToast.info('Coming soon', 'Sync controls are coming soon.')
-            }
+            icon="trash-outline"
+            title="Delete my data"
+            subtitle="Removes your saved profile & preferences"
+            onPress={handleDeleteData}
           />
         </Card>
       </ScrollView>
