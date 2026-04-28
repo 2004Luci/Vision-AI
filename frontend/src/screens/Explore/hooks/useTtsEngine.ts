@@ -19,8 +19,8 @@ const getPreferredLanguageForText = (text: string) =>
 const setLanguage = async (language: string) => {
   try {
     await Tts.setDefaultLanguage(language);
-  } catch {
-    // Fall back silently if the requested locale is unavailable.
+  } catch (e) {
+    warn('TTS Engine', 'Failed to set default language', { language }, e);
   }
 };
 
